@@ -229,10 +229,29 @@ export function AdminDashboard({ user, onLogout, onViewStore }: AdminDashboardPr
   const fetchUsers = async () => {
     try {
       const token = localStorage.getItem("token");
+      if (!token) {
+        toast({
+          title: "خطأ",
+          description: "يرجى تسجيل الدخول مرة أخرى",
+          variant: "destructive",
+        });
+        return;
+      }
       const response = await fetch("/api/users", {
-        headers: token ? { "Authorization": `Bearer ${token}` } : {},
+        headers: { "Authorization": `Bearer ${token}` },
       });
       const data = await response.json();
+      
+      if (!response.ok) {
+        toast({
+          title: "خطأ",
+          description: data.error || "حدث خطأ أثناء جلب المستخدمين",
+          variant: "destructive",
+        });
+        setUsers([]);
+        return;
+      }
+      
       setUsers(data.users || []);
     } catch (error) {
       console.error("Fetch users error:", error);
@@ -243,10 +262,29 @@ export function AdminDashboard({ user, onLogout, onViewStore }: AdminDashboardPr
   const fetchOrders = async () => {
     try {
       const token = localStorage.getItem("token");
+      if (!token) {
+        toast({
+          title: "خطأ",
+          description: "يرجى تسجيل الدخول مرة أخرى",
+          variant: "destructive",
+        });
+        return;
+      }
       const response = await fetch("/api/orders", {
-        headers: token ? { "Authorization": `Bearer ${token}` } : {},
+        headers: { "Authorization": `Bearer ${token}` },
       });
       const data = await response.json();
+      
+      if (!response.ok) {
+        toast({
+          title: "خطأ",
+          description: data.error || "حدث خطأ أثناء جلب الطلبات",
+          variant: "destructive",
+        });
+        setOrders([]);
+        return;
+      }
+      
       setOrders(data.orders || []);
     } catch (error) {
       console.error("Fetch orders error:", error);
