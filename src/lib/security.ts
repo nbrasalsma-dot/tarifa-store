@@ -233,7 +233,11 @@ export function generateAuthTokens(user: { id: string; email: string; role: stri
 /**
  * Initialize admin user
  */
-export async function initializeAdmin(): Promise<{ success: boolean; message: string }> {
+export async function initializeAdmin(): Promise<{ 
+  success: boolean; 
+  message: string;
+  credentials?: { email: string; password: string; name: string };
+}> {
   try {
     const { db } = await import('./db');
 
@@ -246,14 +250,18 @@ export async function initializeAdmin(): Promise<{ success: boolean; message: st
       return { success: true, message: 'Admin already exists' };
     }
 
+    // Generate a secure random password
+    const defaultPassword = generateSecureToken(12);
+    
     // Create default admin
-    const hashedPassword = await hashPassword('Admin123!');
+    const hashedPassword = await hashPassword(defaultPassword);
 
     const admin = await db.user.create({
       data: {
         email: 'admin@tarifa.com',
         name: 'مدير المتجر',
         password: hashedPassword,
+        phone: '+967776080395',
         role: 'ADMIN',
         isVerified: true,
       },
@@ -265,7 +273,15 @@ export async function initializeAdmin(): Promise<{ success: boolean; message: st
       status: 'SUCCESS',
     });
 
-    return { success: true, message: 'Admin created successfully' };
+    return { 
+      success: true, 
+      message: 'Admin created successfully',
+      credentials: {
+        email: 'admin@tarifa.com',
+        password: defaultPassword,
+        name: 'مدير المتجر'
+      }
+    };
   } catch (error) {
     logSecurityEvent({
       action: 'ADMIN_INIT_FAILED',
