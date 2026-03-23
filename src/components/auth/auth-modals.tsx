@@ -165,8 +165,11 @@ export function AuthModals({ isOpen, onClose, defaultTab = "login" }: AuthModals
         description: "تم تسجيل الدخول بنجاح",
       });
       
-      // Store user in localStorage
+      // Store user and token in localStorage
       localStorage.setItem("user", JSON.stringify(data.user));
+      if (data.token) {
+        localStorage.setItem("token", data.token);
+      }
       
       onClose();
       window.location.reload();

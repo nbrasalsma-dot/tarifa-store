@@ -228,21 +228,29 @@ export function AdminDashboard({ user, onLogout, onViewStore }: AdminDashboardPr
 
   const fetchUsers = async () => {
     try {
-      const response = await fetch("/api/users");
+      const token = localStorage.getItem("token");
+      const response = await fetch("/api/users", {
+        headers: token ? { "Authorization": `Bearer ${token}` } : {},
+      });
       const data = await response.json();
-      setUsers(data.users);
+      setUsers(data.users || []);
     } catch (error) {
       console.error("Fetch users error:", error);
+      setUsers([]);
     }
   };
 
   const fetchOrders = async () => {
     try {
-      const response = await fetch("/api/orders");
+      const token = localStorage.getItem("token");
+      const response = await fetch("/api/orders", {
+        headers: token ? { "Authorization": `Bearer ${token}` } : {},
+      });
       const data = await response.json();
-      setOrders(data.orders);
+      setOrders(data.orders || []);
     } catch (error) {
       console.error("Fetch orders error:", error);
+      setOrders([]);
     }
   };
 
@@ -414,9 +422,13 @@ export function AdminDashboard({ user, onLogout, onViewStore }: AdminDashboardPr
 
   const handleToggleUserStatus = async (userId: string, isActive: boolean) => {
     try {
+      const token = localStorage.getItem("token");
       const response = await fetch("/api/users", {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          ...(token ? { "Authorization": `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({ userId, isActive }),
       });
 
@@ -441,9 +453,13 @@ export function AdminDashboard({ user, onLogout, onViewStore }: AdminDashboardPr
     if (!confirm("هل أنت متأكد من ترقية هذا المستخدم إلى مندوبة؟")) return;
     
     try {
+      const token = localStorage.getItem("token");
       const response = await fetch("/api/users", {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          ...(token ? { "Authorization": `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({ userId, role: "AGENT" }),
       });
 
@@ -469,9 +485,13 @@ export function AdminDashboard({ user, onLogout, onViewStore }: AdminDashboardPr
     if (!confirm("هل أنت متأكد من إلغاء صلاحية المندوبة؟")) return;
     
     try {
+      const token = localStorage.getItem("token");
       const response = await fetch("/api/users", {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          ...(token ? { "Authorization": `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({ userId, role: "CUSTOMER" }),
       });
 
@@ -494,9 +514,13 @@ export function AdminDashboard({ user, onLogout, onViewStore }: AdminDashboardPr
 
   const handleUpdateOrderStatus = async (orderId: string, status: string) => {
     try {
+      const token = localStorage.getItem("token");
       const response = await fetch("/api/orders", {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          ...(token ? { "Authorization": `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({ orderId, status }),
       });
 
