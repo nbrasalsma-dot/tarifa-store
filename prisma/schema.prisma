@@ -1,0 +1,209 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ==================== Users ====================
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  name          String
+  password      String
+  phone         String
+  address       String?
+  role          UserRole @default(CUSTOMER)
+  isVerified    Boolean  @default(false)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  products         Product[]
+  orders           Order[]         @relation("CustomerOrders")
+  agentOrders      Order[]         @relation("AgentOrders")
+  conversations    Conversation[]  @relation("CustomerConversations")
+  agentConvs       Conversation[]  @relation("AgentConversations")
+  messages         Message[]
+  verificationCodes VerificationCode[]
+
+  @@map("users")
+}
+
+enum UserRole {
+  ADMIN      // الإدارة
+  AGENT      // المندوبة
+  CUSTOMER   // العميلة
+}
+
+// ==================== Products ====================
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String
+  nameAr      String
+  slug        String   @unique
+  image       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  products    Product[]
+
+  @@map("categories")
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  nameAr      String
+  description String?
+  descriptionAr String?
+  price       Float
+  originalPrice Float?
+  images      String   // JSON array of image URLs
+  mainImage   String
+  stock       Int      @default(0)
+  sku         String?
+  isActive    Boolean  @default(true)
+  isFeatured  Boolean  @default(false)
+  categoryId  String?
+  agentId     String   // المندوبة التي أضافت المنتج
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  category    Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  agent       User      @relation(fields: [agentId], references: [id])
+  orderItems  OrderItem[]
+
+  @@map("products")
+}
+
+// ==================== Orders ====================
+
+model Order {
+  id            String      @id @default(cuid())
+  customerId    String
+  agentId       String?
+  status        OrderStatus @default(PENDING)
+  totalAmount   Float
+  notes         String?
+  address       String?
+  phone         String?
+  governorate   String?     // المحافظة للتوصيل
+  paymentMethod String?     // transfer / wallet
+  paymentDetails String?    // JSON: transferNumber or wallet+proofImage
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  // Relations
+  customer      User        @relation("CustomerOrders", fields: [customerId], references: [id])
+  agent         User?       @relation("AgentOrders", fields: [agentId], references: [id], onDelete: SetNull)
+  items         OrderItem[]
+
+  @@map("orders")
+}
+
+enum OrderStatus {
+  PENDING       // قيد الانتظار
+  PROCESSING    // قيد التجهيز
+  SHIPPED       // تم الشحن
+  DELIVERED     // تم التسليم
+  COMPLETED     // منجز
+  CANCELLED     // ملغي
+}
+
+model OrderItem {
+  id        String   @id @default(cuid())
+  orderId   String
+  productId String
+  quantity  Int      @default(1)
+  price     Float
+  createdAt DateTime @default(now())
+
+  // Relations
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id])
+
+  @@map("order_items")
+}
+
+// ==================== Chat System ====================
+
+model Conversation {
+  id          String   @id @default(cuid())
+  customerId  String
+  agentId     String
+  productId   String?  // محادثة حول منتج معين
+  status      ConversationStatus @default(ACTIVE)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  customer    User      @relation("CustomerConversations", fields: [customerId], references: [id])
+  agent       User      @relation("AgentConversations", fields: [agentId], references: [id])
+  messages    Message[]
+
+  @@map("conversations")
+}
+
+enum ConversationStatus {
+  ACTIVE
+  CLOSED
+}
+
+model Message {
+  id             String   @id @default(cuid())
+  conversationId String
+  senderId       String
+  content        String
+  isRead         Boolean  @default(false)
+  createdAt      DateTime @default(now())
+
+  // Relations
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender         User        @relation(fields: [senderId], references: [id])
+
+  @@map("messages")
+}
+
+// ==================== Verification ====================
+
+model VerificationCode {
+  id        String   @id @default(cuid())
+  userId    String
+  code      String
+  type      VerificationType
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  // Relations
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("verification_codes")
+}
+
+enum VerificationType {
+  EMAIL_VERIFICATION  // تأكيد البريد
+  PASSWORD_RESET      // إعادة تعيين كلمة المرور
+}
+
+// ==================== Settings ====================
+
+model Setting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("settings")
+}
