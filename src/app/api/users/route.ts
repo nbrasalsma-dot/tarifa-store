@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { z } from "zod";
+import { verifyToken } from "@/lib/security";
 
 const updateSchema = z.object({
   userId: z.string(),
@@ -11,9 +12,30 @@ const updateSchema = z.object({
   role: z.enum(["ADMIN", "AGENT", "CUSTOMER"]).optional(),
 });
 
-// Get all users
+/**
+ * Get all users - PROTECTED (Admin only)
+ */
 export async function GET(request: NextRequest) {
   try {
+    // Check for authorization header
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json(
+        { error: 'غير مصرح بالوصول' },
+        { status: 401 }
+      );
+    }
+
+    const token = authHeader.substring(7);
+    const verification = verifyToken(token);
+
+    if (!verification.valid || verification.payload?.role !== 'ADMIN') {
+      return NextResponse.json(
+        { error: 'هذه الميزة متاحة للمسؤول فقط' },
+        { status: 403 }
+      );
+    }
+
     const { searchParams } = new URL(request.url);
     const role = searchParams.get("role");
 
@@ -55,13 +77,52 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// Update user
+/**
+ * Update user - PROTECTED
+ * Admin can update any user
+ * Users can only update their own profile (name, phone, address)
+ */
 export async function PUT(request: NextRequest) {
   try {
+    // Check for authorization header
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json(
+        { error: 'غير مصرح بالوصول' },
+        { status: 401 }
+      );
+    }
+
+    const token = authHeader.substring(7);
+    const verification = verifyToken(token);
+
+    if (!verification.valid) {
+      return NextResponse.json(
+        { error: 'رمز غير صالح' },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
     const validated = updateSchema.parse(body);
-
     const { userId, ...data } = validated;
+
+    // Check permissions
+    const isAdmin = verification.payload?.role === 'ADMIN';
+    const isSelf = verification.payload?.userId === userId;
+
+    if (!isAdmin && !isSelf) {
+      return NextResponse.json(
+        { error: 'يمكنك تعديل بياناتك فقط' },
+        { status: 403 }
+      );
+    }
+
+    // Non-admin users can only update name, phone, address
+    if (!isAdmin) {
+      delete data.isActive;
+      delete data.role;
+    }
 
     const user = await db.user.update({
       where: { id: userId },

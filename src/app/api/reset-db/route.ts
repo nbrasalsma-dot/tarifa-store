@@ -1,11 +1,43 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
+import { verifyToken } from '@/lib/security';
 
 const prisma = new PrismaClient();
 
-export async function GET() {
+/**
+ * Reset Database API - PROTECTED
+ * Only ADMIN users can access this endpoint
+ */
+export async function GET(request: NextRequest) {
   try {
-    console.log('🗑️ Starting database reset...');
+    // Check for authorization header
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json(
+        { error: 'غير مصرح بالوصول' },
+        { status: 401 }
+      );
+    }
+
+    const token = authHeader.substring(7);
+    const verification = verifyToken(token);
+
+    if (!verification.valid) {
+      return NextResponse.json(
+        { error: 'رمز غير صالح' },
+        { status: 401 }
+      );
+    }
+
+    // Check if user is ADMIN
+    if (verification.payload?.role !== 'ADMIN') {
+      return NextResponse.json(
+        { error: 'هذه الميزة متاحة للمسؤول فقط' },
+        { status: 403 }
+      );
+    }
+
+    console.log('🗑️ Starting database reset by admin:', verification.payload.email);
 
     // ==================== حذف جميع الجداول ====================
     
@@ -26,7 +58,7 @@ export async function GET() {
       try {
         await prisma.$executeRawUnsafe(`DROP TABLE IF EXISTS ${table} CASCADE;`);
         console.log(`✅ Dropped table: ${table}`);
-      } catch (e) {
+      } catch {
         console.log(`⚠️ Could not drop ${table}`);
       }
     }
@@ -103,6 +135,8 @@ export async function GET() {
         address TEXT,
         phone TEXT,
         governorate TEXT,
+        "paymentMethod" TEXT,
+        "paymentDetails" TEXT,
         "createdAt" TIMESTAMP DEFAULT NOW(),
         "updatedAt" TIMESTAMP DEFAULT NOW()
       );

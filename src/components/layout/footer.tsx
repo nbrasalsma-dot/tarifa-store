@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Phone, Mail, MapPin, Instagram, MessageCircle, Heart, Sparkles } from "lucide-react";
+import { Phone, Mail, MapPin, Instagram, MessageCircle, Heart, Sparkles, Twitter, Facebook } from "lucide-react";
 
 // WhatsApp number
 const WHATSAPP_NUMBER = "967776080395";
@@ -44,6 +44,24 @@ export function Footer() {
                 aria-label="تواصل معنا عبر واتساب"
               >
                 <MessageCircle className="h-5 w-5 group-hover:scale-110 transition-transform" />
+              </a>
+              <a
+                href="#"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-11 h-11 rounded-full bg-white/10 hover:bg-[#1DA1F2] flex items-center justify-center transition-all duration-300 group"
+                aria-label="تابعينا على تويتر"
+              >
+                <Twitter className="h-5 w-5 group-hover:scale-110 transition-transform" />
+              </a>
+              <a
+                href="#"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-11 h-11 rounded-full bg-white/10 hover:bg-[#1877F2] flex items-center justify-center transition-all duration-300 group"
+                aria-label="تابعينا على فيسبوك"
+              >
+                <Facebook className="h-5 w-5 group-hover:scale-110 transition-transform" />
               </a>
             </div>
           </div>
