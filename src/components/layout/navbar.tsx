@@ -53,8 +53,12 @@ export function Navbar({
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  const { state: cartState } = useCart();
+  const { state } = useCart();
   const { state: wishlistState } = useWishlist();
+
+  // Get cart data safely
+  const cartItemCount = state?.cart?.itemCount || 0;
+  const wishlistItemCount = wishlistState?.itemCount || 0;
 
   useEffect(() => {
     const handleScroll = () => {
@@ -239,9 +243,9 @@ export function Navbar({
               onClick={onOpenAuth}
             >
               <Heart className="h-5 w-5" />
-              {wishlistState.itemCount > 0 && (
+              {wishlistItemCount > 0 && (
                 <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center bg-[var(--rose)] text-white">
-                  {wishlistState.itemCount}
+                  {wishlistItemCount}
                 </Badge>
               )}
             </Button>
@@ -254,9 +258,9 @@ export function Navbar({
               onClick={onOpenCart}
             >
               <ShoppingCart className="h-5 w-5" />
-              {cartState.itemCount > 0 && (
+              {cartItemCount > 0 && (
                 <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center bg-[var(--gold)] text-white">
-                  {cartState.itemCount}
+                  {cartItemCount}
                 </Badge>
               )}
             </Button>
