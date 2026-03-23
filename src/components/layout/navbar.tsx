@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   ShoppingCart,
   Heart,
@@ -16,7 +16,6 @@ import {
   Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useCart } from "@/contexts/cart-context";
 import { useWishlist } from "@/contexts/wishlist-context";
@@ -34,6 +33,7 @@ interface NavbarProps {
   user?: UserData | null;
   onOpenCart: () => void;
   onOpenAuth: () => void;
+  onOpenWishlist?: () => void;
   onLogout?: () => void;
   onViewStore?: () => void;
   onViewDashboard?: () => void;
@@ -44,6 +44,7 @@ export function Navbar({
   user,
   onOpenCart,
   onOpenAuth,
+  onOpenWishlist,
   onLogout,
   onViewStore,
   onViewDashboard,
@@ -81,6 +82,16 @@ export function Navbar({
     return pathname.startsWith(href);
   };
 
+  // Handle wishlist click
+  const handleWishlistClick = () => {
+    if (onOpenWishlist) {
+      onOpenWishlist();
+    } else {
+      // Fallback: navigate to wishlist page
+      window.location.href = "/wishlist";
+    }
+  };
+
   return (
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
@@ -103,7 +114,7 @@ export function Navbar({
           {/* Mobile Menu Button */}
           <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="md:hidden hover:bg-[#FAF7F2]">
+              <Button variant="ghost" size="icon" className="md:hidden hover:bg-[#FAF7F2] shrink-0">
                 <Menu className="h-6 w-6 text-[#3D3021]" />
               </Button>
             </SheetTrigger>
@@ -140,19 +151,66 @@ export function Navbar({
                       {link.label}
                     </Link>
                   ))}
+                  
+                  {/* Wishlist Link in Mobile Menu */}
+                  <button
+                    onClick={() => {
+                      setIsMobileMenuOpen(false);
+                      handleWishlistClick();
+                    }}
+                    className="text-lg font-semibold py-4 px-5 rounded-xl transition-all duration-300 text-[#3D3021] hover:bg-[#FAF7F2] hover:text-[#8B7355] flex items-center justify-between"
+                  >
+                    <span>المفضلة</span>
+                    {wishlistItemCount > 0 && (
+                      <span className="bg-gradient-to-r from-rose-500 to-pink-500 text-white text-sm px-2 py-0.5 rounded-full">
+                        {wishlistItemCount}
+                      </span>
+                    )}
+                  </button>
                 </nav>
+
+                {/* Mobile Quick Actions */}
+                <div className="flex gap-3 mt-6 px-2">
+                  <Button
+                    variant="outline"
+                    className="flex-1 gap-2 py-6 rounded-xl border-[#C9A962] text-[#8B7355] hover:bg-[#FAF7F2]"
+                    onClick={() => {
+                      setIsMobileMenuOpen(false);
+                      onOpenCart();
+                    }}
+                  >
+                    <ShoppingCart className="h-5 w-5" />
+                    <span>السلة</span>
+                    {cartItemCount > 0 && (
+                      <span className="bg-[#C9A962] text-white text-xs px-2 py-0.5 rounded-full">
+                        {cartItemCount}
+                      </span>
+                    )}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="flex-1 gap-2 py-6 rounded-xl border-rose-300 text-rose-600 hover:bg-rose-50"
+                    onClick={() => {
+                      setIsMobileMenuOpen(false);
+                      handleWishlistClick();
+                    }}
+                  >
+                    <Heart className="h-5 w-5" />
+                    <span>المفضلة</span>
+                  </Button>
+                </div>
 
                 {/* Mobile User Section */}
                 <div className="mt-auto pt-6 border-t border-[#FAF7F2]">
                   {user ? (
                     <div className="space-y-3">
                       <div className="flex items-center gap-4 p-4 bg-gradient-to-r from-[#FAF7F2] to-white rounded-xl">
-                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#C9A962] to-[#B8956E] flex items-center justify-center">
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#C9A962] to-[#B8956E] flex items-center justify-center shrink-0">
                           <User className="h-6 w-6 text-white" />
                         </div>
-                        <div>
-                          <p className="font-bold text-[#3D3021]">{user.name}</p>
-                          <p className="text-sm text-[#8B7355]">{user.email}</p>
+                        <div className="overflow-hidden">
+                          <p className="font-bold text-[#3D3021] truncate">{user.name}</p>
+                          <p className="text-sm text-[#8B7355] truncate">{user.email}</p>
                         </div>
                       </div>
                       {onViewStore && viewMode === 'dashboard' && (
@@ -212,7 +270,7 @@ export function Navbar({
           </Sheet>
 
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 group">
+          <Link href="/" className="flex items-center gap-2 group shrink-0">
             <motion.img
               src="/logo-transparent.jpg"
               alt="تَرِفَة"
@@ -245,13 +303,13 @@ export function Navbar({
           </nav>
 
           {/* Actions */}
-          <div className="flex items-center gap-2 md:gap-3">
-            {/* Wishlist */}
+          <div className="flex items-center gap-1 sm:gap-2 md:gap-3">
+            {/* Wishlist - Always visible */}
             <Button
               variant="ghost"
               size="icon"
-              className="relative hover:bg-[#FAF7F2] rounded-full"
-              onClick={onOpenAuth}
+              className="relative hover:bg-[#FAF7F2] rounded-full shrink-0 h-10 w-10"
+              onClick={handleWishlistClick}
             >
               <Heart className="h-5 w-5 text-[#3D3021]" />
               {wishlistItemCount > 0 && (
@@ -265,11 +323,11 @@ export function Navbar({
               )}
             </Button>
 
-            {/* Cart */}
+            {/* Cart - Always visible */}
             <Button
               variant="ghost"
               size="icon"
-              className="relative hover:bg-[#FAF7F2] rounded-full"
+              className="relative hover:bg-[#FAF7F2] rounded-full shrink-0 h-10 w-10"
               onClick={onOpenCart}
             >
               <ShoppingCart className="h-5 w-5 text-[#3D3021]" />
@@ -323,14 +381,26 @@ export function Navbar({
                 </div>
               ) : (
                 <Button
-                  className="bg-gradient-to-r from-[#C9A962] to-[#B8956E] hover:from-[#B8956E] hover:to-[#9A7B4F] text-white gap-2 px-6"
+                  className="bg-gradient-to-r from-[#C9A962] to-[#B8956E] hover:from-[#B8956E] hover:to-[#9A7B4F] text-white gap-2 px-4 sm:px-6"
                   onClick={onOpenAuth}
                 >
                   <User className="h-4 w-4" />
-                  <span>تسجيل الدخول</span>
+                  <span className="hidden sm:inline">تسجيل الدخول</span>
                 </Button>
               )}
             </div>
+
+            {/* Mobile Login Button - only show if not logged in */}
+            {!user && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="md:hidden hover:bg-[#FAF7F2] shrink-0 h-10 w-10"
+                onClick={onOpenAuth}
+              >
+                <User className="h-5 w-5 text-[#3D3021]" />
+              </Button>
+            )}
           </div>
         </div>
       </div>

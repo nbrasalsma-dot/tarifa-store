@@ -3,16 +3,15 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
-  Button,
-  Card,
-  CardContent,
-  Badge,
   Heart,
   MessageCircle,
   Sparkles,
   Grid2X2,
   LayoutGrid,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { CartPanel } from "@/components/cart/cart-panel";
 import { CheckoutDialog } from "@/components/checkout/checkout-dialog";

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Phone, Mail, MapPin, Instagram, Twitter, Facebook, MessageCircle, Heart, Sparkles } from "lucide-react";
+import { Phone, Mail, MapPin, Instagram, MessageCircle, Heart, Sparkles } from "lucide-react";
 
 // WhatsApp number
 const WHATSAPP_NUMBER = "967776080395";
@@ -32,26 +32,16 @@ export function Footer() {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-11 h-11 rounded-full bg-white/10 hover:bg-gradient-to-tr hover:from-yellow-400 hover:via-pink-500 hover:to-purple-600 flex items-center justify-center transition-all duration-300 group"
+                aria-label="تابعينا على انستغرام"
               >
                 <Instagram className="h-5 w-5 group-hover:scale-110 transition-transform" />
-              </a>
-              <a
-                href="#"
-                className="w-11 h-11 rounded-full bg-white/10 hover:bg-[#1DA1F2] flex items-center justify-center transition-all duration-300 group"
-              >
-                <Twitter className="h-5 w-5 group-hover:scale-110 transition-transform" />
-              </a>
-              <a
-                href="#"
-                className="w-11 h-11 rounded-full bg-white/10 hover:bg-[#1877F2] flex items-center justify-center transition-all duration-300 group"
-              >
-                <Facebook className="h-5 w-5 group-hover:scale-110 transition-transform" />
               </a>
               <a
                 href={`https://wa.me/${WHATSAPP_NUMBER}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-11 h-11 rounded-full bg-white/10 hover:bg-[#25D366] flex items-center justify-center transition-all duration-300 group"
+                aria-label="تواصل معنا عبر واتساب"
               >
                 <MessageCircle className="h-5 w-5 group-hover:scale-110 transition-transform" />
               </a>
@@ -87,17 +77,20 @@ export function Footer() {
             <h3 className="text-lg font-bold mb-6 text-[#C9A962]">خدمة العملاء</h3>
             <ul className="space-y-4">
               {[
-                "سياسة الشحن والتوصيل",
-                "سياسة الإرجاع والاستبدال",
-                "الأسئلة الشائعة",
-                "الشروط والأحكام",
-                "سياسة الخصوصية",
+                { href: "/policies?tab=shipping", label: "سياسة الشحن والتوصيل" },
+                { href: "/policies?tab=returns", label: "سياسة الإرجاع والاستبدال" },
+                { href: "/policies?tab=faq", label: "الأسئلة الشائعة" },
+                { href: "/policies?tab=terms", label: "الشروط والأحكام" },
+                { href: "/policies?tab=privacy", label: "سياسة الخصوصية" },
               ].map((item, index) => (
                 <li key={index}>
-                  <span className="text-white/60 hover:text-[#C9A962] transition-colors duration-300 cursor-pointer flex items-center gap-2">
+                  <Link
+                    href={item.href}
+                    className="text-white/60 hover:text-[#C9A962] transition-colors duration-300 flex items-center gap-2"
+                  >
                     <span className="w-1.5 h-1.5 rounded-full bg-[#C9A962]/50"></span>
-                    {item}
-                  </span>
+                    {item.label}
+                  </Link>
                 </li>
               ))}
             </ul>

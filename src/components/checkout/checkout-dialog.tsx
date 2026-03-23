@@ -75,7 +75,8 @@ export function CheckoutDialog({
   const [orderId, setOrderId] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const safeItems = items || [];
+  const total = safeItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

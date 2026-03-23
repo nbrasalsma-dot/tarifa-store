@@ -1,0 +1,15 @@
+▲ Next.js 16.1.3 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://21.0.19.243:3000
+- Environments: .env
+
+✓ Starting...
+✓ Ready in 1266ms
+⚠ metadataBase property in metadata export is not set for resolving social open graph or twitter images, using "http://localhost:3000". See https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadatabase
+ GET / 200 in 1884ms (compile: 1458ms, proxy.ts: 156ms, render: 269ms)
+prisma:query SELECT `main`.`products`.`id`, `main`.`products`.`name`, `main`.`products`.`nameAr`, `main`.`products`.`description`, `main`.`products`.`descriptionAr`, `main`.`products`.`price`, `main`.`products`.`originalPrice`, `main`.`products`.`images`, `main`.`products`.`mainImage`, `main`.`products`.`stock`, `main`.`products`.`sku`, `main`.`products`.`isActive`, `main`.`products`.`isFeatured`, `main`.`products`.`categoryId`, `main`.`products`.`agentId`, `main`.`products`.`createdAt`, `main`.`products`.`updatedAt` FROM `main`.`products` WHERE (`main`.`products`.`isActive` = ? AND `main`.`products`.`isFeatured` = ?) ORDER BY `main`.`products`.`createdAt` DESC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`categories`.`id`, `main`.`categories`.`name`, `main`.`categories`.`nameAr`, `main`.`categories`.`slug`, `main`.`categories`.`image`, `main`.`categories`.`createdAt`, `main`.`categories`.`updatedAt` FROM `main`.`categories` WHERE `main`.`categories`.`id` IN (?,?,?,?,?,?) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`users`.`id`, `main`.`users`.`name`, `main`.`users`.`email` FROM `main`.`users` WHERE `main`.`users`.`id` IN (?) LIMIT ? OFFSET ?
+ GET /api/products?isFeatured=true 200 in 227ms (compile: 187ms, proxy.ts: 3ms, render: 37ms)
+prisma:query SELECT `main`.`categories`.`id`, `main`.`categories`.`name`, `main`.`categories`.`nameAr`, `main`.`categories`.`slug`, `main`.`categories`.`image`, `main`.`categories`.`createdAt`, `main`.`categories`.`updatedAt`, COALESCE(`aggr_selection_0_Product`.`_aggr_count_products`, 0) AS `_aggr_count_products` FROM `main`.`categories` LEFT JOIN (SELECT `main`.`products`.`categoryId`, COUNT(*) AS `_aggr_count_products` FROM `main`.`products` WHERE 1=1 GROUP BY `main`.`products`.`categoryId`) AS `aggr_selection_0_Product` ON (`main`.`categories`.`id` = `aggr_selection_0_Product`.`categoryId`) WHERE 1=1 ORDER BY `main`.`categories`.`nameAr` ASC LIMIT ? OFFSET ?
+ GET /api/categories 200 in 54ms (compile: 43ms, proxy.ts: 2ms, render: 10ms)

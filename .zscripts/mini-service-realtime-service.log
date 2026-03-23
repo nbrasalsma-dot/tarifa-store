@@ -7,3 +7,4 @@ bun install v1.3.10 (30e609e0)
 [realtime-service] Running bun run dev...
 $ bun --hot index.ts
 🚀 Real-time service running on port 3030
+error: script "dev" was terminated by signal SIGTERM (Polite quit request)
