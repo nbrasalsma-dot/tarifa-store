@@ -235,6 +235,7 @@ export function AdminDashboard({ user, onLogout, onViewStore }: AdminDashboardPr
           description: "يرجى تسجيل الدخول مرة أخرى",
           variant: "destructive",
         });
+        onLogout();
         return;
       }
       const response = await fetch("/api/users", {
@@ -243,6 +244,15 @@ export function AdminDashboard({ user, onLogout, onViewStore }: AdminDashboardPr
       const data = await response.json();
       
       if (!response.ok) {
+        if (response.status === 401) {
+          toast({
+            title: "انتهت الجلسة",
+            description: "يرجى تسجيل الدخول مرة أخرى",
+            variant: "destructive",
+          });
+          onLogout();
+          return;
+        }
         toast({
           title: "خطأ",
           description: data.error || "حدث خطأ أثناء جلب المستخدمين",
@@ -268,6 +278,7 @@ export function AdminDashboard({ user, onLogout, onViewStore }: AdminDashboardPr
           description: "يرجى تسجيل الدخول مرة أخرى",
           variant: "destructive",
         });
+        onLogout();
         return;
       }
       const response = await fetch("/api/orders", {
@@ -276,6 +287,15 @@ export function AdminDashboard({ user, onLogout, onViewStore }: AdminDashboardPr
       const data = await response.json();
       
       if (!response.ok) {
+        if (response.status === 401) {
+          toast({
+            title: "انتهت الجلسة",
+            description: "يرجى تسجيل الدخول مرة أخرى",
+            variant: "destructive",
+          });
+          onLogout();
+          return;
+        }
         toast({
           title: "خطأ",
           description: data.error || "حدث خطأ أثناء جلب الطلبات",

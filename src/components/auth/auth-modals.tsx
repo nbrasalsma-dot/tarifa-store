@@ -171,8 +171,11 @@ export function AuthModals({ isOpen, onClose, defaultTab = "login" }: AuthModals
         localStorage.setItem("token", data.token);
       }
       
+      // Close dialog and reload with a small delay to ensure localStorage is saved
       onClose();
-      window.location.reload();
+      setTimeout(() => {
+        window.location.reload();
+      }, 100);
     } catch (error) {
       setServerError("حدث خطأ في الاتصال");
     } finally {
