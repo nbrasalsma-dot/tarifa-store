@@ -1,124 +1,169 @@
 "use client";
 
 import Link from "next/link";
-import { Phone, Mail, MapPin, Instagram, Twitter, Facebook } from "lucide-react";
+import { Phone, Mail, MapPin, Instagram, Twitter, Facebook, MessageCircle, Heart, Sparkles } from "lucide-react";
 
 // WhatsApp number
 const WHATSAPP_NUMBER = "967776080395";
 
 export function Footer() {
+  const currentYear = new Date().getFullYear();
+
   return (
-    <footer className="bg-[#1A1A1A] text-white py-16">
-      <div className="container mx-auto px-4">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
-          <div className="md:col-span-1">
-            <img
-              src="/logo-transparent.jpg"
-              alt="تَرِفَة"
-              className="h-16 w-auto object-contain mb-4"
-            />
-            <p className="text-gray-400 mb-6">
-              وجهتك الأولى للأكسسوارات وأدوات التجميل والعطور الفاخرة في اليمن
+    <footer className="bg-gradient-to-b from-[#3D3021] to-[#2A2318] text-white">
+      {/* Main Footer */}
+      <div className="container mx-auto px-4 py-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-12">
+          {/* Brand Section */}
+          <div className="lg:col-span-1">
+            <div className="mb-6">
+              <img
+                src="/logo-transparent.jpg"
+                alt="تَرِفَة"
+                className="h-20 w-auto object-contain brightness-0 invert"
+              />
+            </div>
+            <p className="text-white/60 leading-relaxed mb-6">
+              وجهتك الأولى للأكسسوارات وأدوات التجميل والعطور الفاخرة في اليمن. نقدم لكي تجربة تسوق فريدة ومميزة.
             </p>
-            <div className="flex gap-4">
+            <div className="flex gap-3">
               <a
-                href="https://www.instagram.com/tarifa.store.ye?utm_source=qr&igsh=aXYxczJtcGVoM3lp"
+                href="https://www.instagram.com/tarifa.store.ye"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-10 h-10 rounded-full bg-white/10 hover:bg-[var(--gold)] flex items-center justify-center transition-colors"
+                className="w-11 h-11 rounded-full bg-white/10 hover:bg-gradient-to-tr hover:from-yellow-400 hover:via-pink-500 hover:to-purple-600 flex items-center justify-center transition-all duration-300 group"
               >
-                <Instagram className="h-5 w-5" />
+                <Instagram className="h-5 w-5 group-hover:scale-110 transition-transform" />
               </a>
               <a
                 href="#"
-                className="w-10 h-10 rounded-full bg-white/10 hover:bg-[var(--gold)] flex items-center justify-center transition-colors"
+                className="w-11 h-11 rounded-full bg-white/10 hover:bg-[#1DA1F2] flex items-center justify-center transition-all duration-300 group"
               >
-                <Twitter className="h-5 w-5" />
+                <Twitter className="h-5 w-5 group-hover:scale-110 transition-transform" />
               </a>
               <a
                 href="#"
-                className="w-10 h-10 rounded-full bg-white/10 hover:bg-[var(--gold)] flex items-center justify-center transition-colors"
+                className="w-11 h-11 rounded-full bg-white/10 hover:bg-[#1877F2] flex items-center justify-center transition-all duration-300 group"
               >
-                <Facebook className="h-5 w-5" />
+                <Facebook className="h-5 w-5 group-hover:scale-110 transition-transform" />
+              </a>
+              <a
+                href={`https://wa.me/${WHATSAPP_NUMBER}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-11 h-11 rounded-full bg-white/10 hover:bg-[#25D366] flex items-center justify-center transition-all duration-300 group"
+              >
+                <MessageCircle className="h-5 w-5 group-hover:scale-110 transition-transform" />
               </a>
             </div>
           </div>
 
+          {/* Quick Links */}
           <div>
-            <h3 className="text-lg font-bold mb-4">روابط سريعة</h3>
-            <ul className="space-y-2 text-gray-400">
-              <li>
-                <Link href="/" className="hover:text-[var(--gold)] transition-colors">
-                  الرئيسية
-                </Link>
-              </li>
-              <li>
-                <Link href="/products" className="hover:text-[var(--gold)] transition-colors">
-                  المنتجات
-                </Link>
-              </li>
-              <li>
-                <Link href="/categories" className="hover:text-[var(--gold)] transition-colors">
-                  الفئات
-                </Link>
-              </li>
-              <li>
-                <Link href="/about" className="hover:text-[var(--gold)] transition-colors">
-                  عن المتجر
-                </Link>
-              </li>
+            <h3 className="text-lg font-bold mb-6 text-[#C9A962]">روابط سريعة</h3>
+            <ul className="space-y-4">
+              {[
+                { href: "/", label: "الرئيسية" },
+                { href: "/products", label: "المنتجات" },
+                { href: "/categories", label: "الفئات" },
+                { href: "/about", label: "عن المتجر" },
+                { href: "/contact", label: "تواصلي معنا" },
+              ].map((link) => (
+                <li key={link.href}>
+                  <Link
+                    href={link.href}
+                    className="text-white/60 hover:text-[#C9A962] transition-colors duration-300 flex items-center gap-2"
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#C9A962]/50"></span>
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 
+          {/* Customer Service */}
           <div>
-            <h3 className="text-lg font-bold mb-4">خدمة العملاء</h3>
-            <ul className="space-y-2 text-gray-400">
-              <li>
-                <Link href="/contact" className="hover:text-[var(--gold)] transition-colors">
-                  تواصلي معنا
-                </Link>
-              </li>
-              <li>
-                <span className="hover:text-[var(--gold)] transition-colors cursor-pointer">
-                  خدمات التوصيل
-                </span>
-              </li>
-              <li>
-                <span className="hover:text-[var(--gold)] transition-colors cursor-pointer">
-                  الأسئلة الشائعة
-                </span>
-              </li>
+            <h3 className="text-lg font-bold mb-6 text-[#C9A962]">خدمة العملاء</h3>
+            <ul className="space-y-4">
+              {[
+                "سياسة الشحن والتوصيل",
+                "سياسة الإرجاع والاستبدال",
+                "الأسئلة الشائعة",
+                "الشروط والأحكام",
+                "سياسة الخصوصية",
+              ].map((item, index) => (
+                <li key={index}>
+                  <span className="text-white/60 hover:text-[#C9A962] transition-colors duration-300 cursor-pointer flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#C9A962]/50"></span>
+                    {item}
+                  </span>
+                </li>
+              ))}
             </ul>
           </div>
 
+          {/* Contact Info */}
           <div>
-            <h3 className="text-lg font-bold mb-4">تواصلي معنا</h3>
-            <ul className="space-y-3 text-gray-400">
-              <li className="flex items-center gap-2">
-                <Phone className="h-4 w-4" />
-                <a
-                  href={`https://wa.me/${WHATSAPP_NUMBER}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:text-[var(--gold)] transition-colors"
-                >
-                  +967 776 080 395
-                </a>
+            <h3 className="text-lg font-bold mb-6 text-[#C9A962]">تواصلي معنا</h3>
+            <ul className="space-y-5">
+              <li className="flex items-center gap-4">
+                <div className="w-11 h-11 rounded-full bg-[#C9A962]/20 flex items-center justify-center shrink-0">
+                  <Phone className="h-5 w-5 text-[#C9A962]" />
+                </div>
+                <div>
+                  <p className="text-white/40 text-sm">اتصلي بنا</p>
+                  <a
+                    href={`https://wa.me/${WHATSAPP_NUMBER}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-white hover:text-[#C9A962] transition-colors"
+                  >
+                    +967 776 080 395
+                  </a>
+                </div>
               </li>
-              <li className="flex items-center gap-2">
-                <Mail className="h-4 w-4" />
-                <span>tarifa.store.ye@gmail.com</span>
+              <li className="flex items-center gap-4">
+                <div className="w-11 h-11 rounded-full bg-[#C9A962]/20 flex items-center justify-center shrink-0">
+                  <Mail className="h-5 w-5 text-[#C9A962]" />
+                </div>
+                <div>
+                  <p className="text-white/40 text-sm">البريد الإلكتروني</p>
+                  <a
+                    href="mailto:tarifa.store.ye@gmail.com"
+                    className="text-white hover:text-[#C9A962] transition-colors"
+                  >
+                    tarifa.store.ye@gmail.com
+                  </a>
+                </div>
               </li>
-              <li className="flex items-center gap-2">
-                <MapPin className="h-4 w-4" />
-                <span>صنعاء، الجمهورية اليمنية</span>
+              <li className="flex items-center gap-4">
+                <div className="w-11 h-11 rounded-full bg-[#C9A962]/20 flex items-center justify-center shrink-0">
+                  <MapPin className="h-5 w-5 text-[#C9A962]" />
+                </div>
+                <div>
+                  <p className="text-white/40 text-sm">العنوان</p>
+                  <p className="text-white">صنعاء، الجمهورية اليمنية</p>
+                </div>
               </li>
             </ul>
           </div>
         </div>
+      </div>
 
-        <div className="border-t border-gray-800 pt-8 text-center text-gray-400">
-          <p>© 2024 تَرِفَة. جميع الحقوق محفوظة.</p>
+      {/* Bottom Bar */}
+      <div className="border-t border-white/10">
+        <div className="container mx-auto px-4 py-6">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <p className="text-white/40 text-sm">
+              © {currentYear} تَرِفَة. جميع الحقوق محفوظة.
+            </p>
+            <p className="text-white/40 text-sm flex items-center gap-1">
+              صُنع بـ
+              <Heart className="h-4 w-4 text-rose-500 fill-rose-500 animate-pulse" />
+              في اليمن
+            </p>
+          </div>
         </div>
       </div>
     </footer>

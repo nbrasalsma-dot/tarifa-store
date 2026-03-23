@@ -10,6 +10,12 @@ import {
   Minus,
   Check,
   MessageCircle,
+  Search,
+  Sparkles,
+  Filter,
+  Grid,
+  LayoutGrid,
+  ArrowLeft,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -79,10 +85,9 @@ export default function ProductsPage() {
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
-  const [lastOrderId, setLastOrderId] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<'dashboard' | 'store'>('dashboard');
+  const [viewMode, setViewMode] = useState<'dashboard' | 'store'>('store');
 
-  const { state: cartState, addItem: addToCart, isInCart, getItemQuantity, updateQuantity, removeItem, clearCart } = useCart();
+  const { state: cartState, addItem: addToCart, isInCart, getItemQuantity, updateQuantity, clearCart } = useCart();
   const { isInWishlist, toggleItem: toggleWishlist } = useWishlist();
 
   useEffect(() => {
@@ -155,19 +160,15 @@ export default function ProductsPage() {
   // Show dashboards for logged users
   if (user && viewMode === 'dashboard') {
     if (user.role === "ADMIN") {
-      return <AdminDashboard user={user} onLogout={handleLogout} />;
+      return <AdminDashboard user={user} onLogout={handleLogout} onViewStore={() => setViewMode('store')} />;
     }
     if (user.role === "AGENT") {
-      return <AgentDashboard user={user} onLogout={handleLogout} />;
+      return <AgentDashboard user={user} onLogout={handleLogout} onViewStore={() => setViewMode('store')} />;
     }
     if (user.role === "CUSTOMER") {
       return (
         <>
-          <CustomerDashboard
-            user={user}
-            onLogout={handleLogout}
-            onViewStore={() => setViewMode('store')}
-          />
+          <CustomerDashboard user={user} onLogout={handleLogout} onViewStore={() => setViewMode('store')} />
           <ChatWidget userId={user.id} userName={user.name} userRole={user.role} />
         </>
       );
@@ -175,7 +176,7 @@ export default function ProductsPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-[#FAF7F2] to-[#F5EFE6]">
       {/* Navbar */}
       <Navbar
         user={user}
@@ -210,61 +211,67 @@ export default function ProductsPage() {
       <CheckoutDialog
         isOpen={isCheckoutOpen}
         onClose={() => setIsCheckoutOpen(false)}
-        items={cartState.items}
+        items={cartState.cart.items}
         userId={user?.id || ""}
-        onSuccess={(orderId) => {
-          setLastOrderId(orderId);
+        onSuccess={() => {
           clearCart();
         }}
       />
 
       {/* Product Detail Dialog */}
       <Dialog open={!!selectedProduct} onOpenChange={() => setSelectedProduct(null)}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-white rounded-3xl">
           {selectedProduct && (
-            <div className="grid md:grid-cols-2 gap-6">
-              <div className="relative aspect-square rounded-lg overflow-hidden bg-gray-100">
+            <div className="grid md:grid-cols-2 gap-8 p-4">
+              <div className="relative aspect-square rounded-2xl overflow-hidden bg-[#FAF7F2]">
                 <img src={selectedProduct.mainImage} alt={selectedProduct.nameAr} className="w-full h-full object-cover" />
                 {selectedProduct.originalPrice && selectedProduct.originalPrice > selectedProduct.price && (
-                  <Badge className="absolute top-4 right-4 bg-[var(--rose)] text-white">
+                  <Badge className="absolute top-4 right-4 bg-gradient-to-r from-rose-500 to-pink-500 text-white px-4 py-2 rounded-full">
                     خصم {Math.round((1 - selectedProduct.price / selectedProduct.originalPrice) * 100)}%
                   </Badge>
                 )}
               </div>
-              <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-5">
                 <div>
-                  <p className="text-sm text-gray-500">{selectedProduct.category?.nameAr || "بدون تصنيف"}</p>
-                  <h2 className="text-2xl font-bold">{selectedProduct.nameAr}</h2>
+                  <p className="text-sm text-[#C9A962] font-medium mb-2 uppercase tracking-wider">
+                    {selectedProduct.category?.nameAr || "بدون تصنيف"}
+                  </p>
+                  <h2 className="text-3xl font-bold text-[#3D3021]">{selectedProduct.nameAr}</h2>
                 </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-3xl font-bold text-[var(--gold-dark)]">
+                <div className="flex items-center gap-4">
+                  <span className="text-4xl font-bold text-[#8B7355]">
                     {selectedProduct.price.toLocaleString()} ر.ي
                   </span>
                   {selectedProduct.originalPrice && selectedProduct.originalPrice > selectedProduct.price && (
-                    <span className="text-xl text-gray-400 line-through">
+                    <span className="text-xl text-[#A69B8D] line-through">
                       {selectedProduct.originalPrice.toLocaleString()} ر.ي
                     </span>
                   )}
                 </div>
-                <p className="text-sm">{selectedProduct.stock > 0 ? `متوفر (${selectedProduct.stock} قطعة)` : "غير متوفر"}</p>
+                <div className="flex items-center gap-3">
+                  <span className={`w-3 h-3 rounded-full ${selectedProduct.stock > 0 ? 'bg-emerald-500' : 'bg-rose-500'}`}></span>
+                  <span className="text-[#5D5D5D]">
+                    {selectedProduct.stock > 0 ? `متوفر (${selectedProduct.stock} قطعة)` : "غير متوفر"}
+                  </span>
+                </div>
 
                 {isInCart(selectedProduct.id) && (
-                  <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                    <span className="text-sm font-medium">الكمية:</span>
-                    <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-4 p-4 bg-[#FAF7F2] rounded-xl">
+                    <span className="font-medium text-[#3D3021]">الكمية:</span>
+                    <div className="flex items-center gap-3 bg-white rounded-full p-1">
                       <Button
                         size="sm"
-                        variant="outline"
-                        className="h-8 w-8 p-0"
+                        variant="ghost"
+                        className="h-9 w-9 p-0 rounded-full"
                         onClick={() => updateQuantity(selectedProduct.id, getItemQuantity(selectedProduct.id) - 1)}
                       >
                         <Minus className="h-4 w-4" />
                       </Button>
-                      <span className="w-8 text-center font-bold">{getItemQuantity(selectedProduct.id)}</span>
+                      <span className="w-10 text-center font-bold text-lg">{getItemQuantity(selectedProduct.id)}</span>
                       <Button
                         size="sm"
-                        variant="outline"
-                        className="h-8 w-8 p-0"
+                        variant="ghost"
+                        className="h-9 w-9 p-0 rounded-full"
                         onClick={() => updateQuantity(selectedProduct.id, getItemQuantity(selectedProduct.id) + 1)}
                         disabled={getItemQuantity(selectedProduct.id) >= selectedProduct.stock}
                       >
@@ -274,10 +281,10 @@ export default function ProductsPage() {
                   </div>
                 )}
 
-                <div className="flex flex-col gap-3">
+                <div className="flex flex-col gap-4 mt-4">
                   <Button
                     size="lg"
-                    className="bg-[var(--gold)] hover:bg-[var(--gold-dark)] text-white"
+                    className="bg-gradient-to-r from-[#C9A962] to-[#B8956E] hover:from-[#B8956E] hover:to-[#9A7B4F] text-white py-7 rounded-full text-lg"
                     disabled={selectedProduct.stock === 0}
                     onClick={() => {
                       if (!isInCart(selectedProduct.id)) {
@@ -307,14 +314,37 @@ export default function ProductsPage() {
                       </>
                     )}
                   </Button>
-                  <Button
-                    variant="outline"
-                    className="w-full"
-                    onClick={() => openWhatsApp(`استفسار عن منتج: ${selectedProduct.nameAr}`)}
-                  >
-                    <MessageCircle className="h-4 w-4 ml-2" />
-                    استفسار عبر واتساب
-                  </Button>
+                  <div className="flex gap-3">
+                    <Button
+                      variant="outline"
+                      className={`flex-1 py-6 rounded-full ${isInWishlist(selectedProduct.id) ? 'border-rose-400 text-rose-500' : 'border-[#C9A962] text-[#8B7355]'}`}
+                      onClick={() => {
+                        toggleWishlist({
+                          productId: selectedProduct.id,
+                          name: selectedProduct.name,
+                          nameAr: selectedProduct.nameAr,
+                          price: selectedProduct.price,
+                          originalPrice: selectedProduct.originalPrice,
+                          image: selectedProduct.mainImage,
+                        });
+                        toast({
+                          title: isInWishlist(selectedProduct.id) ? "تمت الإزالة" : "تمت الإضافة",
+                          description: isInWishlist(selectedProduct.id) ? "تم إزالة المنتج من المفضلة" : "تم إضافة المنتج للمفضلة",
+                        });
+                      }}
+                    >
+                      <Heart className={`h-5 w-5 ml-2 ${isInWishlist(selectedProduct.id) ? 'fill-rose-500' : ''}`} />
+                      {isInWishlist(selectedProduct.id) ? 'في المفضلة' : 'أضف للمفضلة'}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="flex-1 py-6 rounded-full border-[#25D366] text-[#25D366] hover:bg-[#25D366]/10"
+                      onClick={() => openWhatsApp(`استفسار عن منتج: ${selectedProduct.nameAr}`)}
+                    >
+                      <MessageCircle className="h-5 w-5 ml-2" />
+                      واتساب
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -323,142 +353,184 @@ export default function ProductsPage() {
       </Dialog>
 
       {/* Main Content */}
-      <main className="flex-1 pt-20 md:pt-24 pb-8">
+      <main className="flex-1 pt-24 md:pt-28 pb-8">
         <div className="container mx-auto px-4">
-          {/* Title */}
-          <div className="text-center mb-8">
-            <h1 className="text-3xl md:text-4xl font-bold mb-2">جميع المنتجات</h1>
-            <p className="text-gray-500">اكتشفي مجموعتنا المتنوعة من المنتجات الفاخرة</p>
-          </div>
+          {/* Header */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center mb-12"
+          >
+            <span className="text-[#C9A962] text-sm tracking-[0.3em] uppercase mb-4 block">
+              <Sparkles className="h-4 w-4 inline ml-2" />
+              تسوقي الآن
+            </span>
+            <h1 className="text-4xl md:text-5xl font-bold text-[#3D3021] mb-4">
+              جميع المنتجات
+            </h1>
+            <p className="text-[#8B7355] max-w-xl mx-auto text-lg">
+              اكتشفي مجموعتنا المتنوعة من المنتجات الفاخرة المختارة بعناية
+            </p>
+          </motion.div>
 
           {/* Filters */}
-          <div className="flex flex-wrap gap-4 mb-8">
-            <div className="flex-1 min-w-[200px]">
-              <Input
-                placeholder="ابحثي عن منتجات..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full"
-              />
+          <div className="bg-white rounded-2xl shadow-lg border border-[#E8E0D8] p-6 mb-8">
+            <div className="flex flex-wrap gap-4 items-center">
+              <div className="flex-1 min-w-[250px]">
+                <div className="relative">
+                  <Search className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[#C9A962]" />
+                  <Input
+                    placeholder="ابحثي عن منتجات..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pr-12 h-12 rounded-xl border-[#E8E0D8] focus:border-[#C9A962] bg-[#FAF7F2]"
+                  />
+                </div>
+              </div>
+              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                <SelectTrigger className="w-[200px] h-12 rounded-xl border-[#E8E0D8] bg-[#FAF7F2]">
+                  <SelectValue placeholder="التصنيف" />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl">
+                  <SelectItem value="all">جميع التصنيفات</SelectItem>
+                  {categories.map((cat) => (
+                    <SelectItem key={cat.id} value={cat.id}>{cat.nameAr}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger className="w-[180px] h-12 rounded-xl border-[#E8E0D8] bg-[#FAF7F2]">
+                  <SelectValue placeholder="الترتيب" />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl">
+                  <SelectItem value="newest">الأحدث</SelectItem>
+                  <SelectItem value="price-low">السعر: من الأقل</SelectItem>
+                  <SelectItem value="price-high">السعر: من الأعلى</SelectItem>
+                  <SelectItem value="name">الاسم</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="التصنيف" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">جميع التصنيفات</SelectItem>
-                {categories.map((cat) => (
-                  <SelectItem key={cat.id} value={cat.id}>{cat.nameAr}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="الترتيب" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="newest">الأحدث</SelectItem>
-                <SelectItem value="price-low">السعر: من الأقل</SelectItem>
-                <SelectItem value="price-high">السعر: من الأعلى</SelectItem>
-                <SelectItem value="name">الاسم</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
 
           {/* Products Grid */}
           {isLoading ? (
-            <div className="flex justify-center py-20">
-              <div className="w-12 h-12 border-4 border-[var(--gold)] border-t-transparent rounded-full animate-spin" />
+            <div className="flex flex-col items-center justify-center py-20">
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+              >
+                <Sparkles className="h-12 w-12 text-[#C9A962]" />
+              </motion.div>
+              <p className="text-[#8B7355] mt-4">جاري التحميل...</p>
             </div>
           ) : filteredProducts.length === 0 ? (
             <div className="text-center py-20">
-              <p className="text-gray-500 text-lg">لا توجد منتجات</p>
-              <Button className="mt-4" onClick={() => { setSelectedCategory("all"); setSearchQuery(""); }}>
+              <div className="w-24 h-24 rounded-full bg-[#FAF7F2] flex items-center justify-center mx-auto mb-6">
+                <Search className="h-12 w-12 text-[#C9A962]" />
+              </div>
+              <h3 className="text-xl font-bold text-[#3D3021] mb-2">لا توجد منتجات</h3>
+              <p className="text-[#8B7355] mb-6">جربي تغيير الفلاتر أو البحث بكلمات أخرى</p>
+              <Button
+                className="bg-gradient-to-r from-[#C9A962] to-[#B8956E] text-white rounded-full px-8"
+                onClick={() => { setSelectedCategory("all"); setSearchQuery(""); }}
+              >
                 إعادة ضبط الفلاتر
               </Button>
             </div>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-              {filteredProducts.map((product) => (
-                <motion.div
-                  key={product.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="group cursor-pointer"
-                  onClick={() => setSelectedProduct(product)}
-                >
-                  <Card className="overflow-hidden border-0 shadow-lg hover:shadow-xl transition-shadow">
-                    <div className="relative aspect-square overflow-hidden">
-                      <img
-                        src={product.mainImage}
-                        alt={product.nameAr}
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                      />
-                      <div className="absolute top-2 right-2 flex flex-col gap-1">
-                        {product.isFeatured && (
-                          <Badge className="bg-[var(--gold)] text-white">
-                            <Star className="h-3 w-3 ml-1" />
-                            مميز
-                          </Badge>
-                        )}
-                        {product.originalPrice && product.originalPrice > product.price && (
-                          <Badge className="bg-[var(--rose)] text-white">
-                            -{Math.round((1 - product.price / product.originalPrice) * 100)}%
-                          </Badge>
-                        )}
-                      </div>
-                      <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            className="flex-1 bg-[var(--gold)] hover:bg-[var(--gold-dark)]"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              openWhatsApp(`استفسار عن منتج: ${product.nameAr}`);
-                            }}
-                          >
-                            <MessageCircle className="h-4 w-4 ml-1" />
-                            استفسار
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="bg-white/90 hover:bg-white"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toggleWishlist({
-                                productId: product.id,
-                                name: product.name,
-                                nameAr: product.nameAr,
-                                price: product.price,
-                                originalPrice: product.originalPrice,
-                                image: product.mainImage,
-                              });
-                            }}
-                          >
-                            <Heart className={`h-4 w-4 ${isInWishlist(product.id) ? 'fill-[var(--rose)] text-[var(--rose)]' : ''}`} />
-                          </Button>
+            <>
+              <div className="flex items-center justify-between mb-6">
+                <p className="text-[#8B7355]">
+                  عرض <span className="font-bold text-[#3D3021]">{filteredProducts.length}</span> منتج
+                </p>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                {filteredProducts.map((product, index) => (
+                  <motion.div
+                    key={product.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                    className="group cursor-pointer"
+                    onClick={() => setSelectedProduct(product)}
+                  >
+                    <Card className="overflow-hidden border-0 shadow-lg hover:shadow-2xl transition-all duration-500 bg-white rounded-2xl">
+                      <div className="relative aspect-square overflow-hidden">
+                        <img
+                          src={product.mainImage}
+                          alt={product.nameAr}
+                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                        />
+                        <div className="absolute top-3 right-3 flex flex-col gap-2">
+                          {product.isFeatured && (
+                            <Badge className="bg-gradient-to-r from-[#C9A962] to-[#B8956E] text-white border-0 px-3 py-1 rounded-full">
+                              <Star className="h-3 w-3 ml-1" />
+                              مميز
+                            </Badge>
+                          )}
+                          {product.originalPrice && product.originalPrice > product.price && (
+                            <Badge className="bg-gradient-to-r from-rose-500 to-pink-500 text-white border-0 px-3 py-1 rounded-full">
+                              -{Math.round((1 - product.price / product.originalPrice) * 100)}%
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              className="flex-1 bg-gradient-to-r from-[#C9A962] to-[#B8956E] hover:from-[#B8956E] hover:to-[#9A7B4F] text-white rounded-full"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openWhatsApp(`استفسار عن منتج: ${product.nameAr}`);
+                              }}
+                            >
+                              <MessageCircle className="h-4 w-4 ml-1" />
+                              استفسار
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="bg-white/90 hover:bg-white rounded-full"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleWishlist({
+                                  productId: product.id,
+                                  name: product.name,
+                                  nameAr: product.nameAr,
+                                  price: product.price,
+                                  originalPrice: product.originalPrice,
+                                  image: product.mainImage,
+                                });
+                              }}
+                            >
+                              <Heart className={`h-4 w-4 ${isInWishlist(product.id) ? 'fill-rose-500 text-rose-500' : ''}`} />
+                            </Button>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                    <CardContent className="p-4">
-                      <p className="text-xs text-gray-500 mb-1">{product.category?.nameAr || "بدون تصنيف"}</p>
-                      <h3 className="font-semibold text-sm md:text-base mb-2 line-clamp-2">{product.nameAr}</h3>
-                      <div className="flex items-center gap-2">
-                        <span className="text-lg font-bold text-[var(--gold-dark)]">
-                          {product.price.toLocaleString()} ر.ي
-                        </span>
-                        {product.originalPrice && product.originalPrice > product.price && (
-                          <span className="text-sm text-gray-400 line-through">
-                            {product.originalPrice.toLocaleString()}
+                      <CardContent className="p-5">
+                        <p className="text-xs text-[#C9A962] font-medium mb-2 uppercase tracking-wider">
+                          {product.category?.nameAr || "بدون تصنيف"}
+                        </p>
+                        <h3 className="font-semibold text-[#3D3021] text-base mb-3 line-clamp-2 min-h-[48px]">
+                          {product.nameAr}
+                        </h3>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xl font-bold text-[#8B7355]">
+                            {product.price.toLocaleString()} ر.ي
                           </span>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              ))}
-            </div>
+                          {product.originalPrice && product.originalPrice > product.price && (
+                            <span className="text-sm text-[#A69B8D] line-through">
+                              {product.originalPrice.toLocaleString()}
+                            </span>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                ))}
+              </div>
+            </>
           )}
         </div>
       </main>

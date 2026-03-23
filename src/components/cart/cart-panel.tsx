@@ -1,5 +1,6 @@
 /**
  * Shopping Cart Slide-out Panel
+ * Luxury Design for Tarifa Store
  */
 
 "use client";
@@ -15,6 +16,9 @@ import {
   Tag,
   Truck,
   Shield,
+  Sparkles,
+  ArrowLeft,
+  LogIn,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -59,30 +63,44 @@ export function CartPanel({
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent className="w-full sm:max-w-lg flex flex-col">
-        <SheetHeader>
-          <SheetTitle className="flex items-center gap-2">
-            <ShoppingCart className="h-5 w-5 text-[var(--gold)]" />
+      <SheetContent className="w-full sm:max-w-lg flex flex-col bg-gradient-to-b from-[#FAF7F2] to-white border-l-0">
+        <SheetHeader className="pb-4 border-b border-[#E8E0D8]">
+          <SheetTitle className="flex items-center gap-3 text-[#3D3021]">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#C9A962] to-[#B8956E] flex items-center justify-center">
+              <ShoppingCart className="h-5 w-5 text-white" />
+            </div>
             سلة التسوق
-            <Badge className="bg-[var(--gold)]">{state.cart.itemCount}</Badge>
+            <Badge className="bg-gradient-to-r from-[#C9A962] to-[#B8956E] text-white border-0 rounded-full px-3">
+              {state.cart.itemCount}
+            </Badge>
           </SheetTitle>
         </SheetHeader>
 
         {state.cart.items.length === 0 ? (
-          <div className="flex-1 flex flex-col items-center justify-center text-center">
-            <Package className="h-16 w-16 text-gray-300 mb-4" />
-            <p className="text-lg font-medium mb-2">السلة فارغة</p>
-            <p className="text-sm text-gray-500 mb-4">
-              أضف منتجات للسلة للمتابعة
+          <div className="flex-1 flex flex-col items-center justify-center text-center px-6">
+            <motion.div
+              initial={{ scale: 0.5, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="w-24 h-24 rounded-full bg-gradient-to-br from-[#FAF7F2] to-[#F5EFE6] flex items-center justify-center mb-6"
+            >
+              <Package className="h-12 w-12 text-[#C9A962]" />
+            </motion.div>
+            <h3 className="text-xl font-bold text-[#3D3021] mb-2">السلة فارغة</h3>
+            <p className="text-[#8B7355] mb-6">
+              أضيفي منتجات للسلة للمتابعة
             </p>
-            <Button onClick={onClose} className="bg-[var(--gold)] hover:bg-[var(--gold-dark)]">
+            <Button
+              onClick={onClose}
+              className="bg-gradient-to-r from-[#C9A962] to-[#B8956E] hover:from-[#B8956E] hover:to-[#9A7B4F] text-white rounded-full px-8"
+            >
               تصفح المنتجات
+              <ArrowLeft className="h-4 w-4 mr-2" />
             </Button>
           </div>
         ) : (
           <>
             {/* Cart Items */}
-            <div className="flex-1 overflow-y-auto py-4 space-y-4">
+            <div className="flex-1 overflow-y-auto py-4 space-y-4 custom-scrollbar">
               <AnimatePresence mode="popLayout">
                 {state.cart.items.map((item) => (
                   <motion.div
@@ -91,10 +109,10 @@ export function CartPanel({
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: -20 }}
-                    className="flex gap-3 p-3 bg-gray-50 rounded-lg"
+                    className="flex gap-4 p-4 bg-white rounded-2xl shadow-sm border border-[#E8E0D8] hover:shadow-md transition-shadow"
                   >
                     {/* Image */}
-                    <div className="w-20 h-20 rounded-md overflow-hidden flex-shrink-0">
+                    <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0 bg-[#FAF7F2]">
                       <img
                         src={item.image}
                         alt={item.nameAr}
@@ -104,56 +122,51 @@ export function CartPanel({
 
                     {/* Info */}
                     <div className="flex-1 min-w-0">
-                      <h4 className="font-medium text-sm line-clamp-1">{item.nameAr}</h4>
-                      <p className="text-xs text-gray-500 mb-1">{item.name}</p>
-                      
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="font-bold text-[var(--gold-dark)]">
+                      <h4 className="font-semibold text-[#3D3021] line-clamp-1">{item.nameAr}</h4>
+                      <p className="text-xs text-[#8B7355] mb-2">{item.name}</p>
+
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="font-bold text-[#8B7355]">
                           {item.price.toLocaleString()} ر.ي
                         </span>
                         {item.originalPrice && item.originalPrice > item.price && (
-                          <span className="text-xs text-gray-400 line-through">
+                          <span className="text-xs text-[#A69B8D] line-through">
                             {item.originalPrice.toLocaleString()}
                           </span>
                         )}
                       </div>
 
                       {/* Quantity Controls */}
-                      <div className="flex items-center gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-7 w-7 p-0"
-                          onClick={() => handleQuantityChange(item.productId, item.quantity - 1)}
-                        >
-                          <Minus className="h-3 w-3" />
-                        </Button>
-                        <span className="w-8 text-center font-medium">{item.quantity}</span>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-7 w-7 p-0"
-                          onClick={() => handleQuantityChange(item.productId, item.quantity + 1)}
-                          disabled={item.quantity >= item.stock}
-                        >
-                          <Plus className="h-3 w-3" />
-                        </Button>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 bg-[#FAF7F2] rounded-full p-1">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 w-7 p-0 rounded-full hover:bg-white"
+                            onClick={() => handleQuantityChange(item.productId, item.quantity - 1)}
+                          >
+                            <Minus className="h-3 w-3" />
+                          </Button>
+                          <span className="w-8 text-center font-bold text-[#3D3021]">{item.quantity}</span>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 w-7 p-0 rounded-full hover:bg-white"
+                            onClick={() => handleQuantityChange(item.productId, item.quantity + 1)}
+                            disabled={item.quantity >= item.stock}
+                          >
+                            <Plus className="h-3 w-3" />
+                          </Button>
+                        </div>
                         <Button
                           size="sm"
                           variant="ghost"
-                          className="h-7 w-7 p-0 mr-auto text-red-500 hover:text-red-600"
+                          className="h-8 w-8 p-0 text-rose-500 hover:text-rose-600 hover:bg-rose-50 rounded-full"
                           onClick={() => removeItem(item.productId)}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
-                    </div>
-
-                    {/* Item Total */}
-                    <div className="text-left">
-                      <p className="font-bold">
-                        {(item.price * item.quantity).toLocaleString()} ر.ي
-                      </p>
                     </div>
                   </motion.div>
                 ))}
@@ -161,75 +174,91 @@ export function CartPanel({
             </div>
 
             {/* Promo Code */}
-            <div className="py-4 border-t">
+            <div className="py-4 border-t border-[#E8E0D8]">
               <div className="flex gap-2">
                 <Input
                   placeholder="كود الخصم"
                   value={promoCode}
                   onChange={(e) => setPromoCode(e.target.value)}
                   disabled={promoApplied}
+                  className="border-[#E8E0D8] focus:border-[#C9A962] rounded-xl"
                 />
                 <Button
                   variant="outline"
                   onClick={handleApplyPromo}
                   disabled={promoApplied || !promoCode}
+                  className="border-[#C9A962] text-[#8B7355] hover:bg-[#FAF7F2] rounded-xl"
                 >
                   <Tag className="h-4 w-4" />
                 </Button>
               </div>
               {promoApplied && (
-                <p className="text-sm text-green-600 mt-2">✓ خصم 10% مطبق</p>
+                <motion.p
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-sm text-emerald-600 mt-2 flex items-center gap-1"
+                >
+                  <Sparkles className="h-4 w-4" />
+                  خصم 10% مطبق
+                </motion.p>
               )}
             </div>
 
             {/* Summary */}
-            <div className="border-t pt-4 space-y-3">
-              <div className="flex justify-between text-sm">
+            <div className="border-t border-[#E8E0D8] pt-4 space-y-3">
+              <div className="flex justify-between text-sm text-[#5D5D5D]">
                 <span>المجموع الفرعي</span>
                 <span>{state.cart.total.toLocaleString()} ر.ي</span>
               </div>
-              
+
               {discount > 0 && (
-                <div className="flex justify-between text-sm text-green-600">
+                <div className="flex justify-between text-sm text-emerald-600">
                   <span>الخصم</span>
                   <span>-{discount.toLocaleString()} ر.ي</span>
                 </div>
               )}
 
-              <Separator />
+              <Separator className="bg-[#E8E0D8]" />
 
-              <div className="flex justify-between font-bold text-lg">
+              <div className="flex justify-between font-bold text-lg text-[#3D3021]">
                 <span>المجموع</span>
-                <span className="text-[var(--gold-dark)]">
-                  {finalTotal.toLocaleString()} ر.ي
-                </span>
+                <span className="text-[#8B7355]">{finalTotal.toLocaleString()} ر.ي</span>
               </div>
 
               {/* Features */}
-              <div className="flex items-center justify-center gap-4 text-xs text-gray-500 py-2">
+              <div className="flex items-center justify-center gap-6 text-xs text-[#8B7355] py-2">
                 <div className="flex items-center gap-1">
-                  <Truck className="h-3 w-3" />
+                  <Truck className="h-4 w-4 text-[#C9A962]" />
                   <span>توصيل سريع</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <Shield className="h-3 w-3" />
+                  <Shield className="h-4 w-4 text-[#C9A962]" />
                   <span>دفع آمن</span>
                 </div>
               </div>
 
               {/* Actions */}
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <Button
-                  className="w-full bg-gradient-to-r from-[var(--gold-light)] to-[var(--gold)] hover:from-[var(--gold)] hover:to-[var(--gold-dark)]"
-                  size="lg"
+                  className="w-full bg-gradient-to-r from-[#C9A962] to-[#B8956E] hover:from-[#B8956E] hover:to-[#9A7B4F] text-white py-7 rounded-xl text-lg"
                   onClick={onCheckout}
                 >
-                  إتمام الطلب
+                  {!user ? (
+                    <>
+                      <LogIn className="h-5 w-5 ml-2" />
+                      سجلي الدخول للمتابعة
+                    </>
+                  ) : (
+                    <>
+                      إتمام الطلب
+                      <ArrowLeft className="h-5 w-5 mr-2" />
+                    </>
+                  )}
                 </Button>
 
                 <Button
                   variant="ghost"
-                  className="w-full text-red-500 hover:text-red-600"
+                  className="w-full text-rose-500 hover:text-rose-600 hover:bg-rose-50"
                   onClick={clearCart}
                 >
                   <Trash2 className="h-4 w-4 ml-2" />

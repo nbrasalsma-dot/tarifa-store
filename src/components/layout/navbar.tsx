@@ -10,10 +10,10 @@ import {
   Menu,
   X,
   User,
-  ChevronDown,
   LogOut,
   Store,
   LayoutDashboard,
+  Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -83,48 +83,58 @@ export function Navbar({
 
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
         isScrolled
-          ? "bg-white/95 backdrop-blur-md shadow-lg"
-          : "bg-white/90 backdrop-blur-sm"
+          ? "bg-white/98 backdrop-blur-xl shadow-lg shadow-black/5"
+          : "bg-white/90 backdrop-blur-md"
       }`}
     >
+      {/* Top Bar */}
+      <div className="bg-gradient-to-r from-[#3D3021] via-[#4A3D2E] to-[#3D3021] text-white py-2 text-center text-sm">
+        <div className="container mx-auto px-4 flex items-center justify-center gap-2">
+          <Sparkles className="h-3 w-3 text-[#C9A962]" />
+          <span className="text-white/80">توصيل مجاني للطلبات فوق 50,000 ريال</span>
+          <Sparkles className="h-3 w-3 text-[#C9A962]" />
+        </div>
+      </div>
+
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16 md:h-20">
           {/* Mobile Menu Button */}
           <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="md:hidden">
-                <Menu className="h-6 w-6" />
+              <Button variant="ghost" size="icon" className="md:hidden hover:bg-[#FAF7F2]">
+                <Menu className="h-6 w-6 text-[#3D3021]" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-80">
+            <SheetContent side="right" className="w-80 bg-white border-l-0">
               <div className="flex flex-col h-full">
-                <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center justify-between mb-8 pb-6 border-b border-[#FAF7F2]">
                   <img
                     src="/logo-transparent.jpg"
                     alt="تَرِفَة"
-                    className="h-10 w-auto object-contain"
+                    className="h-12 w-auto object-contain"
                   />
                   <Button
                     variant="ghost"
                     size="icon"
                     onClick={() => setIsMobileMenuOpen(false)}
+                    className="hover:bg-[#FAF7F2]"
                   >
-                    <X className="h-5 w-5" />
+                    <X className="h-5 w-5 text-[#3D3021]" />
                   </Button>
                 </div>
 
-                <nav className="flex flex-col gap-2">
+                <nav className="flex flex-col gap-1">
                   {navLinks.map((link) => (
                     <Link
                       key={link.href}
                       href={link.href}
                       onClick={() => setIsMobileMenuOpen(false)}
-                      className={`text-lg font-semibold py-3 px-4 rounded-lg transition-colors ${
+                      className={`text-lg font-semibold py-4 px-5 rounded-xl transition-all duration-300 ${
                         isActive(link.href)
-                          ? "bg-[var(--gold)]/10 text-[var(--gold-dark)]"
-                          : "hover:bg-gray-100"
+                          ? "bg-gradient-to-r from-[#C9A962]/10 to-[#C9A962]/5 text-[#8B7355] border-r-4 border-[#C9A962]"
+                          : "text-[#3D3021] hover:bg-[#FAF7F2] hover:text-[#8B7355]"
                       }`}
                     >
                       {link.label}
@@ -133,61 +143,61 @@ export function Navbar({
                 </nav>
 
                 {/* Mobile User Section */}
-                <div className="mt-auto pt-6 border-t">
+                <div className="mt-auto pt-6 border-t border-[#FAF7F2]">
                   {user ? (
                     <div className="space-y-3">
-                      <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                        <div className="w-10 h-10 rounded-full bg-[var(--gold)]/10 flex items-center justify-center">
-                          <User className="h-5 w-5 text-[var(--gold-dark)]" />
+                      <div className="flex items-center gap-4 p-4 bg-gradient-to-r from-[#FAF7F2] to-white rounded-xl">
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#C9A962] to-[#B8956E] flex items-center justify-center">
+                          <User className="h-6 w-6 text-white" />
                         </div>
                         <div>
-                          <p className="font-semibold">{user.name}</p>
-                          <p className="text-sm text-gray-500">{user.email}</p>
+                          <p className="font-bold text-[#3D3021]">{user.name}</p>
+                          <p className="text-sm text-[#8B7355]">{user.email}</p>
                         </div>
                       </div>
                       {onViewStore && viewMode === 'dashboard' && (
                         <Button
                           variant="outline"
-                          className="w-full justify-start gap-2"
+                          className="w-full justify-start gap-3 py-6 rounded-xl border-[#C9A962] text-[#8B7355] hover:bg-[#FAF7F2]"
                           onClick={() => {
                             onViewStore();
                             setIsMobileMenuOpen(false);
                           }}
                         >
-                          <Store className="h-4 w-4" />
+                          <Store className="h-5 w-5" />
                           عرض المتجر
                         </Button>
                       )}
                       {onViewDashboard && viewMode === 'store' && (
                         <Button
                           variant="outline"
-                          className="w-full justify-start gap-2"
+                          className="w-full justify-start gap-3 py-6 rounded-xl border-[#C9A962] text-[#8B7355] hover:bg-[#FAF7F2]"
                           onClick={() => {
                             onViewDashboard();
                             setIsMobileMenuOpen(false);
                           }}
                         >
-                          <LayoutDashboard className="h-4 w-4" />
+                          <LayoutDashboard className="h-5 w-5" />
                           لوحة التحكم
                         </Button>
                       )}
                       {onLogout && (
                         <Button
                           variant="ghost"
-                          className="w-full justify-start gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+                          className="w-full justify-start gap-3 text-rose-600 hover:text-rose-700 hover:bg-rose-50 py-6 rounded-xl"
                           onClick={() => {
                             onLogout();
                             setIsMobileMenuOpen(false);
                           }}
                         >
-                          <LogOut className="h-4 w-4" />
+                          <LogOut className="h-5 w-5" />
                           تسجيل الخروج
                         </Button>
                       )}
                     </div>
                   ) : (
                     <Button
-                      className="w-full bg-[var(--gold)] hover:bg-[var(--gold-dark)]"
+                      className="w-full bg-gradient-to-r from-[#C9A962] to-[#B8956E] hover:from-[#B8956E] hover:to-[#9A7B4F] text-white py-7 rounded-xl text-lg"
                       onClick={() => {
                         setIsMobileMenuOpen(false);
                         onOpenAuth();
@@ -202,31 +212,32 @@ export function Navbar({
           </Sheet>
 
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2">
-            <img
+          <Link href="/" className="flex items-center gap-2 group">
+            <motion.img
               src="/logo-transparent.jpg"
               alt="تَرِفَة"
-              className="h-10 md:h-12 w-auto object-contain"
+              className="h-10 md:h-14 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
+              whileHover={{ scale: 1.05 }}
             />
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-6">
+          <nav className="hidden lg:flex items-center gap-8">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className={`font-medium transition-colors relative py-2 ${
+                className={`font-medium transition-all duration-300 relative py-2 text-base ${
                   isActive(link.href)
-                    ? "text-[var(--gold-dark)]"
-                    : "hover:text-[var(--gold)]"
+                    ? "text-[#8B7355]"
+                    : "text-[#3D3021] hover:text-[#8B7355]"
                 }`}
               >
                 {link.label}
                 {isActive(link.href) && (
                   <motion.div
                     layoutId="activeNav"
-                    className="absolute -bottom-1 left-0 right-0 h-0.5 bg-[var(--gold)]"
+                    className="absolute -bottom-1 left-0 right-0 h-0.5 bg-gradient-to-r from-[#C9A962] to-[#B8956E] rounded-full"
                   />
                 )}
               </Link>
@@ -239,14 +250,18 @@ export function Navbar({
             <Button
               variant="ghost"
               size="icon"
-              className="relative"
+              className="relative hover:bg-[#FAF7F2] rounded-full"
               onClick={onOpenAuth}
             >
-              <Heart className="h-5 w-5" />
+              <Heart className="h-5 w-5 text-[#3D3021]" />
               {wishlistItemCount > 0 && (
-                <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center bg-[var(--rose)] text-white">
+                <motion.span
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center bg-gradient-to-r from-rose-500 to-pink-500 text-white text-xs rounded-full"
+                >
                   {wishlistItemCount}
-                </Badge>
+                </motion.span>
               )}
             </Button>
 
@@ -254,14 +269,18 @@ export function Navbar({
             <Button
               variant="ghost"
               size="icon"
-              className="relative"
+              className="relative hover:bg-[#FAF7F2] rounded-full"
               onClick={onOpenCart}
             >
-              <ShoppingCart className="h-5 w-5" />
+              <ShoppingCart className="h-5 w-5 text-[#3D3021]" />
               {cartItemCount > 0 && (
-                <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center bg-[var(--gold)] text-white">
+                <motion.span
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center bg-gradient-to-r from-[#C9A962] to-[#B8956E] text-white text-xs rounded-full"
+                >
                   {cartItemCount}
-                </Badge>
+                </motion.span>
               )}
             </Button>
 
@@ -274,10 +293,10 @@ export function Navbar({
                       variant="ghost"
                       size="sm"
                       onClick={onViewStore}
-                      className="gap-2"
+                      className="gap-2 hover:bg-[#FAF7F2] text-[#3D3021]"
                     >
                       <Store className="h-4 w-4" />
-                      <span className="hidden lg:inline">المتجر</span>
+                      <span className="hidden xl:inline">المتجر</span>
                     </Button>
                   )}
                   {onViewDashboard && viewMode === 'store' && (
@@ -285,10 +304,10 @@ export function Navbar({
                       variant="ghost"
                       size="sm"
                       onClick={onViewDashboard}
-                      className="gap-2"
+                      className="gap-2 hover:bg-[#FAF7F2] text-[#3D3021]"
                     >
                       <User className="h-4 w-4" />
-                      <span className="hidden lg:inline">حسابي</span>
+                      <span className="hidden xl:inline">حسابي</span>
                     </Button>
                   )}
                   {onLogout && (
@@ -296,7 +315,7 @@ export function Navbar({
                       variant="ghost"
                       size="icon"
                       onClick={onLogout}
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      className="hover:bg-rose-50 text-rose-600 hover:text-rose-700"
                     >
                       <LogOut className="h-4 w-4" />
                     </Button>
@@ -304,13 +323,11 @@ export function Navbar({
                 </div>
               ) : (
                 <Button
-                  variant="ghost"
-                  size="sm"
+                  className="bg-gradient-to-r from-[#C9A962] to-[#B8956E] hover:from-[#B8956E] hover:to-[#9A7B4F] text-white gap-2 px-6"
                   onClick={onOpenAuth}
-                  className="gap-2"
                 >
                   <User className="h-4 w-4" />
-                  <span className="hidden lg:inline">تسجيل الدخول</span>
+                  <span>تسجيل الدخول</span>
                 </Button>
               )}
             </div>
