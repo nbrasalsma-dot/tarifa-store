@@ -3,7 +3,9 @@ import crypto from "crypto";
 
 /**
  * Generate ImageKit authentication signature
- * Documentation: https://docs.imagekit.io/api-reference/upload-file-api/server-side-file-upload#creating-the-signature
+ * Documentation: https://docs.imagekit.io/api-reference/upload-file-api/server-side-file-upload
+ * 
+ * Signature = HMAC-SHA256(privateKey, expire + token)
  * 
  * Environment variables needed:
  * - IMAGEKIT_PRIVATE_KEY: Your ImageKit private key
@@ -20,6 +22,7 @@ export async function POST(request: NextRequest) {
 
     // If ImageKit is not configured, return error
     if (!privateKey || !publicKey) {
+      console.error("[ImageKit Auth] Missing credentials");
       return NextResponse.json({
         error: "ImageKit not configured",
         message: "Please add IMAGEKIT_PRIVATE_KEY and NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY to your environment variables",
@@ -30,16 +33,23 @@ export async function POST(request: NextRequest) {
     // ImageKit requires expire timestamp (seconds since epoch)
     const expire = Math.floor(Date.now() / 1000) + 2400; // 40 minutes from now
     
-    // Generate a random token (optional but recommended)
+    // Generate a random token
     const token = crypto.randomBytes(16).toString("hex");
     
     // Create signature according to ImageKit documentation
-    // Signature = HMAC-SHA256(privateKey, expire + token)
-    // Or: Signature = SHA1(token + expire + privateKey) for simpler approach
-    
-    // Using the simpler SHA1 approach that ImageKit supports
-    const signatureInput = token + expire + privateKey;
-    const signature = crypto.createHash("sha1").update(signatureInput).digest("hex");
+    // signature = HMAC-SHA256(privateKey, expire + token)
+    const signatureInput = expire + token;
+    const signature = crypto
+      .createHmac("sha256", privateKey)
+      .update(signatureInput)
+      .digest("hex");
+
+    console.log("[ImageKit Auth] Generated signature:", {
+      expire,
+      token,
+      signatureLength: signature.length,
+      publicKey: publicKey.substring(0, 10) + "..."
+    });
 
     return NextResponse.json({
       signature,
@@ -50,7 +60,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error("Upload auth error:", error);
+    console.error("[ImageKit Auth] Error:", error);
     return NextResponse.json({
       error: "Failed to generate upload authentication",
     }, { status: 500 });
