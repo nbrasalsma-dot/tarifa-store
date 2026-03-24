@@ -5,6 +5,13 @@ import crypto from "crypto";
  * Server-side Image Upload to ImageKit
  * This route receives the image from client and uploads it to ImageKit from server
  * This avoids CORS issues when uploading directly from browser
+ *
+ * Last updated: March 2025 - Force rebuild for Vercel
+ * 
+ * ImageKit credentials (from Vercel Environment Variables):
+ * - Public Key: public_Wksh6UwSA7ogAHZPkF8DZNaDMMA=
+ * - Private Key: (secured in Vercel)
+ * - URL Endpoint: https://ik.imagekit.io/tarifastore/
  */
 
 export async function POST(request: NextRequest) {
