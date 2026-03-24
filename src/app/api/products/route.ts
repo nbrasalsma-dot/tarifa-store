@@ -116,7 +116,7 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-// Delete product
+// Delete product (permanent delete from database)
 export async function DELETE(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -129,9 +129,14 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    await db.product.update({
+    // First delete any order items that reference this product
+    await db.orderItem.deleteMany({
+      where: { productId },
+    });
+
+    // Then delete the product permanently
+    await db.product.delete({
       where: { id: productId },
-      data: { isActive: false },
     });
 
     return NextResponse.json({ success: true });

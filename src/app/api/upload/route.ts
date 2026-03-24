@@ -9,7 +9,12 @@ import crypto from "crypto";
 
 export async function POST(request: NextRequest) {
   try {
-    const privateKey = process.env.IMAGEKIT_PRIVATE_KEY;
+    // ImageKit private key must be without the 'private_' prefix
+    let privateKey = process.env.IMAGEKIT_PRIVATE_KEY || "";
+    // Remove 'private_' prefix if present (ImageKit expects the key without prefix)
+    if (privateKey.startsWith("private_")) {
+      privateKey = privateKey.substring(8);
+    }
     const publicKey = process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY;
 
     // Check if ImageKit is configured

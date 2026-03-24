@@ -773,9 +773,12 @@ export function AdminDashboard({ user, onLogout, onViewStore }: AdminDashboardPr
     }
   };
 
-  // Delete product
+  // Delete product (instant UI update)
   const handleDeleteProduct = async (productId: string) => {
     if (!confirm("هل أنت متأكد من حذف هذا المنتج؟")) return;
+
+    // Instantly remove from UI
+    setProducts((prev) => prev.filter((p) => p.id !== productId));
 
     try {
       const response = await fetch(`/api/products?productId=${productId}`, {
@@ -787,12 +790,21 @@ export function AdminDashboard({ user, onLogout, onViewStore }: AdminDashboardPr
       if (data.success) {
         toast({
           title: "تم",
-          description: "تم حذف المنتج",
+          description: "تم حذف المنتج نهائياً",
         });
-        fetchProducts();
         fetchStats();
+      } else {
+        // Revert on error
+        fetchProducts();
+        toast({
+          title: "خطأ",
+          description: data.error || "حدث خطأ أثناء الحذف",
+          variant: "destructive",
+        });
       }
     } catch (error) {
+      // Revert on error
+      fetchProducts();
       toast({
         title: "خطأ",
         description: "حدث خطأ أثناء الحذف",
