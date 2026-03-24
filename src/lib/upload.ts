@@ -1,6 +1,6 @@
 /**
  * Image Upload Service for Tarifa Store
- * Uploads images to ImageKit cloud storage
+ * Uploads images to ImageKit cloud storage via server-side API
  * 
  * ImageKit credentials:
  * - Public Key: public_Wksh6UwSA7ogAHZPkF8DZNaDMMA=
@@ -18,7 +18,7 @@ export interface UploadResult {
 
 /**
  * Upload image to ImageKit (cloud storage)
- * Uses server-side API route for authentication
+ * Uses server-side API route to avoid CORS issues
  */
 export async function uploadImage(file: File): Promise<UploadResult> {
   // Check file size (max 5MB)
@@ -32,88 +32,49 @@ export async function uploadImage(file: File): Promise<UploadResult> {
     return { success: false, error: "نوع الملف غير مدعوم (JPEG, PNG, WebP, GIF)" };
   }
 
-  // Upload to ImageKit via server-side auth
-  return uploadToImageKit(file);
+  return uploadViaServerAPI(file);
 }
 
 /**
- * Upload to ImageKit cloud storage
- * Uses server-side API route for secure authentication
- * Documentation: https://docs.imagekit.io/api-reference/upload-file-api/server-side-file-upload
+ * Upload via server-side API route
+ * This avoids CORS issues by uploading from the server
  */
-async function uploadToImageKit(file: File): Promise<UploadResult> {
+async function uploadViaServerAPI(file: File): Promise<UploadResult> {
   try {
-    console.log("[ImageKit] Starting upload for file:", file.name);
-    
-    // Step 1: Get authentication signature from server-side API
-    const authResponse = await fetch("/api/upload/auth", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ fileName: file.name }),
-    });
+    console.log("[Upload] Starting upload for file:", file.name, "Size:", file.size);
 
-    if (!authResponse.ok) {
-      const errorData = await authResponse.json();
-      console.error("[ImageKit] Auth failed:", errorData);
-      return { 
-        success: false, 
-        error: errorData.message || "فشل في المصادقة على رفع الصورة" 
-      };
-    }
-
-    const authData = await authResponse.json();
-    console.log("[ImageKit] Auth response received:", { 
-      expire: authData.expire, 
-      token: authData.token,
-      publicKey: authData.publicKey 
-    });
-
-    // Check if ImageKit is configured
-    if (!authData.publicKey) {
-      console.error("[ImageKit] Not configured - missing public key");
-      return { success: false, error: "ImageKit غير مُعد بشكل صحيح" };
-    }
-
-    // Step 2: Create form data for ImageKit upload
+    // Create form data
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("fileName", `tarifa-${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`);
-    formData.append("signature", authData.signature);
-    formData.append("expire", authData.expire.toString());
-    formData.append("token", authData.token);
-    formData.append("publicKey", authData.publicKey);
-    formData.append("folder", "/products");
-    formData.append("useUniqueFileName", "true");
 
-    console.log("[ImageKit] Uploading to ImageKit...");
-
-    // Step 3: Upload to ImageKit
-    const uploadResponse = await fetch("https://upload.imagekit.io/api/v1/files/upload", {
+    // Upload via our server-side API
+    const response = await fetch("/api/upload", {
       method: "POST",
       body: formData,
     });
 
-    if (!uploadResponse.ok) {
-      const errorText = await uploadResponse.text();
-      console.error("[ImageKit] Upload failed:", errorText);
-      return { 
-        success: false, 
-        error: `فشل رفع الصورة: ${uploadResponse.status}` 
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+      console.error("[Upload] Failed:", result.error);
+      return {
+        success: false,
+        error: result.error || "فشل رفع الصورة",
       };
     }
 
-    const result = await uploadResponse.json();
-    console.log("[ImageKit] Upload successful:", result.url);
+    console.log("[Upload] Success:", result.url);
 
     return {
       success: true,
       url: result.url,
     };
+
   } catch (error) {
-    console.error("[ImageKit] Upload error:", error);
-    return { 
-      success: false, 
-      error: "حدث خطأ أثناء رفع الصورة" 
+    console.error("[Upload] Error:", error);
+    return {
+      success: false,
+      error: "حدث خطأ أثناء رفع الصورة",
     };
   }
 }
@@ -160,7 +121,7 @@ export function getOptimizedImageUrl(
 }
 
 /**
- * Check if ImageKit is configured (via API)
+ * Check if ImageKit is configured
  */
 export async function checkImageKitConfig(): Promise<{
   configured: boolean;
@@ -168,12 +129,10 @@ export async function checkImageKitConfig(): Promise<{
   urlEndpoint?: string;
 }> {
   try {
-    const response = await fetch("/api/upload/auth");
+    const response = await fetch("/api/upload");
     const data = await response.json();
     return {
-      configured: data.configured,
-      publicKey: data.publicKey,
-      urlEndpoint: data.urlEndpoint,
+      configured: data.imageKitConfigured || false,
     };
   } catch {
     return { configured: false };
