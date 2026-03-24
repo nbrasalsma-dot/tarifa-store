@@ -1,15 +1,10 @@
 /**
- * Image Upload Service
- * Supports: ImageKit, Base64, and URL
+ * Image Upload Service for Tarifa Store
+ * Uploads images to ImageKit cloud storage
  * 
- * When deploying to Vercel, add these environment variables:
- * - IMAGEKIT_PRIVATE_KEY
- * - NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY
- * - NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT
- * 
- * ImageKit credentials for Tarifa Store:
+ * ImageKit credentials:
  * - Public Key: public_Wksh6UwSA7ogAHZPkF8DZNaDMMA=
- * - Private Key: private_axKYAD+8m9LUQdlR0G/RvTZM4mg=
+ * - Private Key: private_axKYAD+8m9LUQdlR0G/RvTZM4mg= (server-side only)
  * - ImagekitID: tarifastore
  * - URL-endpoint: https://ik.imagekit.io/tarifastore
  */
@@ -23,7 +18,7 @@ export interface UploadResult {
 
 /**
  * Upload image to ImageKit (cloud storage)
- * Falls back to base64 if ImageKit is not configured
+ * Uses server-side API route for authentication
  */
 export async function uploadImage(file: File): Promise<UploadResult> {
   // Check file size (max 5MB)
@@ -37,33 +32,20 @@ export async function uploadImage(file: File): Promise<UploadResult> {
     return { success: false, error: "نوع الملف غير مدعوم (JPEG, PNG, WebP, GIF)" };
   }
 
-  const publicKey = process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY;
-  const privateKey = process.env.IMAGEKIT_PRIVATE_KEY;
-  const urlEndpoint = process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT;
-
-  // If ImageKit is configured, use it
-  if (publicKey && privateKey && urlEndpoint) {
-    return uploadToImageKit(file, publicKey, privateKey, urlEndpoint);
-  }
-
-  // Otherwise, convert to base64 (for development)
-  return convertToBase64(file);
+  // Upload to ImageKit via server-side auth
+  return uploadToImageKit(file);
 }
 
 /**
  * Upload to ImageKit cloud storage
+ * Uses server-side API route for secure authentication
  * Documentation: https://docs.imagekit.io/api-reference/upload-file-api/server-side-file-upload
  */
-async function uploadToImageKit(
-  file: File,
-  publicKey: string,
-  privateKey: string,
-  urlEndpoint: string
-): Promise<UploadResult> {
+async function uploadToImageKit(file: File): Promise<UploadResult> {
   try {
     console.log("[ImageKit] Starting upload for file:", file.name);
     
-    // Generate authentication signature (server-side)
+    // Step 1: Get authentication signature from server-side API
     const authResponse = await fetch("/api/upload/auth", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -73,28 +55,39 @@ async function uploadToImageKit(
     if (!authResponse.ok) {
       const errorData = await authResponse.json();
       console.error("[ImageKit] Auth failed:", errorData);
-      throw new Error(errorData.message || "Failed to get upload authentication");
+      return { 
+        success: false, 
+        error: errorData.message || "فشل في المصادقة على رفع الصورة" 
+      };
     }
 
     const authData = await authResponse.json();
-    console.log("[ImageKit] Auth response received:", { expire: authData.expire, token: authData.token });
+    console.log("[ImageKit] Auth response received:", { 
+      expire: authData.expire, 
+      token: authData.token,
+      publicKey: authData.publicKey 
+    });
 
-    // Create form data for ImageKit upload
+    // Check if ImageKit is configured
+    if (!authData.publicKey) {
+      console.error("[ImageKit] Not configured - missing public key");
+      return { success: false, error: "ImageKit غير مُعد بشكل صحيح" };
+    }
+
+    // Step 2: Create form data for ImageKit upload
     const formData = new FormData();
     formData.append("file", file);
     formData.append("fileName", `tarifa-${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`);
     formData.append("signature", authData.signature);
     formData.append("expire", authData.expire.toString());
     formData.append("token", authData.token);
-    formData.append("publicKey", publicKey);
-    // Optional: add folder parameter
+    formData.append("publicKey", authData.publicKey);
     formData.append("folder", "/products");
-    // Optional: use unique filename
     formData.append("useUniqueFileName", "true");
 
     console.log("[ImageKit] Uploading to ImageKit...");
 
-    // Upload to ImageKit
+    // Step 3: Upload to ImageKit
     const uploadResponse = await fetch("https://upload.imagekit.io/api/v1/files/upload", {
       method: "POST",
       body: formData,
@@ -103,7 +96,10 @@ async function uploadToImageKit(
     if (!uploadResponse.ok) {
       const errorText = await uploadResponse.text();
       console.error("[ImageKit] Upload failed:", errorText);
-      throw new Error(`Upload failed: ${uploadResponse.status}`);
+      return { 
+        success: false, 
+        error: `فشل رفع الصورة: ${uploadResponse.status}` 
+      };
     }
 
     const result = await uploadResponse.json();
@@ -115,32 +111,11 @@ async function uploadToImageKit(
     };
   } catch (error) {
     console.error("[ImageKit] Upload error:", error);
-    // Fall back to base64
-    console.log("[ImageKit] Falling back to base64...");
-    return convertToBase64(file);
+    return { 
+      success: false, 
+      error: "حدث خطأ أثناء رفع الصورة" 
+    };
   }
-}
-
-/**
- * Convert file to base64 (fallback for development)
- */
-async function convertToBase64(file: File): Promise<UploadResult> {
-  return new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      resolve({
-        success: true,
-        url: reader.result as string,
-      });
-    };
-    reader.onerror = () => {
-      resolve({
-        success: false,
-        error: "فشل قراءة الملف",
-      });
-    };
-    reader.readAsDataURL(file);
-  });
 }
 
 /**
@@ -185,7 +160,7 @@ export function getOptimizedImageUrl(
 }
 
 /**
- * Check if ImageKit is configured
+ * Check if ImageKit is configured (via API)
  */
 export async function checkImageKitConfig(): Promise<{
   configured: boolean;
