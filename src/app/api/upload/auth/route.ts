@@ -37,8 +37,8 @@ export async function POST(request: NextRequest) {
     const token = crypto.randomBytes(16).toString("hex");
     
     // Create signature according to ImageKit documentation
-    // signature = HMAC-SHA256(privateKey, expire + token)
-    const signatureInput = expire + token;
+    // signature = HMAC-SHA256(privateKey, token + expire)
+    const signatureInput = token + expire;
     const signature = crypto
       .createHmac("sha256", privateKey)
       .update(signatureInput)
