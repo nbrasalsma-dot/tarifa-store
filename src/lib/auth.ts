@@ -141,23 +141,23 @@ export { generateSessionId, addUserSession };
 export { logSecurityEvent };
 // Identity verification function needed by the statistics file
 export async function verifyAuth(req: Request) {
-    const authHeader = req.headers.get("authorization");
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-        return null;
-    }
-    const token = authHeader.split(" ")[1];
-    try {
-        const decoded = verifyToken(token) as any;
-        if (!decoded || !decoded.userId) return null;
+  const authHeader = req.headers.get("authorization");
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return null;
+  }
+  const token = authHeader.split(" ")[1];
+  try {
+    const decoded = verifyToken(token) as any;
+    if (!decoded || !decoded.userId) return null;
 
-        // Â‰« "«·’Õ’Õ…": ‰–Â» ··ﬁ«⁄œ… ·‰Ã·» «·— »… «·ÕﬁÌﬁÌ… «·¬‰
-        const user = await db.user.findUnique({
-            where: { id: decoded.userId },
-            select: { id: true, email: true, role: true }
-        });
+    
+    const user = await db.user.findUnique({
+      where: { id: decoded.userId },
+      select: { id: true, email: true, role: true }
+    });
 
-        return user;
-    } catch (error) {
-        return null;
-    }
+    return user;
+  } catch (error) {
+    return null;
+  }
 }
