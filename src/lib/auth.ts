@@ -147,7 +147,16 @@ export async function verifyAuth(req: Request) {
     }
     const token = authHeader.split(" ")[1];
     try {
-        return verifyToken(token);
+        const decoded = verifyToken(token) as any;
+        if (!decoded || !decoded.userId) return null;
+
+        // Â‰« "«·’Õ’Õ…": ‰–Â» ··ﬁ«⁄œ… ·‰Ã·» «·— »… «·ÕﬁÌﬁÌ… «·¬‰
+        const user = await db.user.findUnique({
+            where: { id: decoded.userId },
+            select: { id: true, email: true, role: true }
+        });
+
+        return user;
     } catch (error) {
         return null;
     }
