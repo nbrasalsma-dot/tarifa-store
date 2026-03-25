@@ -66,6 +66,8 @@ interface Order {
   createdAt: string;
   address: string;
   phone: string;
+  paymentMethod?: string;
+  paymentDetails?: string;
   items: Array<{
     id: string;
     productId: string;
@@ -555,6 +557,55 @@ export function CustomerDashboard({ user, onLogout, onViewStore }: CustomerDashb
                 <p className="text-sm text-gray-600">
                   📞 {selectedOrder.phone}
                 </p>
+              </div>
+
+              {/* Payment Details Section */}
+              <div className="p-4 bg-[var(--gold)]/10 rounded-lg space-y-2 border border-[var(--gold)]/20">
+                <p className="font-medium text-[var(--gold-dark)]">تفاصيل الدفع</p>
+                <div className="text-sm space-y-1">
+                  <p>
+                    <span className="opacity-70">طريقة الدفع: </span>
+                    {selectedOrder.paymentMethod === 'transfer' ? 'حوالة صرافة' : 'محفظة إلكترونية'}
+                  </p>
+
+                  {selectedOrder.paymentDetails && (
+                    (() => {
+                      try {
+                        const details = typeof selectedOrder.paymentDetails === 'string' 
+                          ? JSON.parse(selectedOrder.paymentDetails) 
+                          : selectedOrder.paymentDetails;
+                        
+                        return (
+                          <div className="pt-1 space-y-2">
+                            {details.transferNumber && (
+                              <p className="font-bold text-blue-600">
+                                رقم الحوالة: {details.transferNumber}
+                              </p>
+                            )}
+                            {details.wallet && (
+                              <p className="font-medium">
+                                المحفظة: {details.wallet === 'jeib' ? 'جيب' : details.wallet === 'kash' ? 'كاش' : 'جوالي'}
+                              </p>
+                            )}
+                            {details.proofImage && (
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="w-full mt-1 bg-white border-[var(--gold)] hover:bg-[var(--gold)] hover:text-white transition-all"
+                                onClick={() => window.open(details.proofImage, '_blank')}
+                              >
+                                <Eye className="h-4 w-4 ml-2" />
+                                فتح صورة الإثبات من السحابة
+                              </Button>
+                            )}
+                          </div>
+                        );
+                      } catch (e) {
+                        return null;
+                      }
+                    })()
+                  )}
+                </div>
               </div>
 
               <div className="space-y-2">

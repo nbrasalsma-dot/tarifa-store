@@ -11,7 +11,7 @@ const createOrderSchema = z.object({
     price: z.number().min(0),
   })).min(1, "يجب إضافة منتج واحد على الأقل"),
   notes: z.string().max(500).optional(),
-  address: z.string().min(5, "العنوان قصير جداً").max(200),
+  address: z.string().min(2, "العنوان قصير جداً").max(200),
   phone: z.string().min(6, "رقم الهاتف غير صحيح").max(20),
   governorate: z.string().optional(),
   totalAmount: z.number().min(0).optional(),
@@ -94,7 +94,8 @@ export async function GET(request: NextRequest) {
 // Create order (secure)
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+      const body = await request.json();
+      console.log("البيانات التي وصلت للسيرفر هي:", JSON.stringify(body, null, 2));
     
     // Validate input
     const validatedData = createOrderSchema.parse(body);
@@ -192,7 +193,11 @@ export async function POST(request: NextRequest) {
       }
 
       return newOrder;
+    }, {
+      maxWait: 5000,
+      timeout: 20000,
     });
+
 
     // Log security event
     console.log(`[ORDER] Created: ${order.id} by customer: ${validatedData.customerId} - Total: ${totalAmount}`);
@@ -205,13 +210,13 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: error.errors[0].message },
+        { error: error.errors?.[0]?.message || "خطأ في البيانات المرسلة" },
         { status: 400 }
       );
     }
     console.error("Create order error:", error);
     return NextResponse.json(
-      { error: "حدث خطأ أثناء إنشاء الطلب" },
+      { error: "تعذر الاتصال بقاعدة البيانات حالياً، يرجى المحاولة مرة أخرى" },
       { status: 500 }
     );
   }

@@ -163,28 +163,33 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-// Encryption for cart data (simple XOR for demo, use proper encryption in production)
+
 function encryptData(data: string): string {
-  const key = "tarifa-cart-secret-2024";
-  let result = "";
-  for (let i = 0; i < data.length; i++) {
-    result += String.fromCharCode(data.charCodeAt(i) ^ key.charCodeAt(i % key.length));
-  }
-  return btoa(result);
+    const key = "tarifa-cart-secret-2024";
+    let result = "";
+
+    
+    const encodedData = unescape(encodeURIComponent(data));
+
+    for (let i = 0; i < encodedData.length; i++) {
+        result += String.fromCharCode(encodedData.charCodeAt(i) ^ key.charCodeAt(i % key.length));
+    }
+    return btoa(result);
 }
 
 function decryptData(encrypted: string): string {
-  try {
-    const key = "tarifa-cart-secret-2024";
-    const data = atob(encrypted);
-    let result = "";
-    for (let i = 0; i < data.length; i++) {
-      result += String.fromCharCode(data.charCodeAt(i) ^ key.charCodeAt(i % key.length));
+    try {
+        const key = "tarifa-cart-secret-2024";
+        const data = atob(encrypted);
+        let result = "";
+        for (let i = 0; i < data.length; i++) {
+            result += String.fromCharCode(data.charCodeAt(i) ^ key.charCodeAt(i % key.length));
+        }
+
+        return decodeURIComponent(escape(result));
+    } catch {
+        return "";
     }
-    return result;
-  } catch {
-    return "";
-  }
 }
 
 // Provider

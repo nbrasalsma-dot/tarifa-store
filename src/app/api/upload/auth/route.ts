@@ -38,8 +38,10 @@ export async function POST(request: NextRequest) {
     // Or: Signature = SHA1(token + expire + privateKey) for simpler approach
     
     // Using the simpler SHA1 approach that ImageKit supports
-    const signatureInput = token + expire + privateKey;
-    const signature = crypto.createHash("sha1").update(signatureInput).digest("hex");
+    const signature = crypto
+      .createHmac("sha1", privateKey)
+      .update(token + expire)
+      .digest("hex");
 
     return NextResponse.json({
       signature,

@@ -38,12 +38,12 @@ export async function uploadImage(file: File): Promise<UploadResult> {
   }
 
   const publicKey = process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY;
-  const privateKey = process.env.IMAGEKIT_PRIVATE_KEY;
+ 
   const urlEndpoint = process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT;
 
   // If ImageKit is configured, use it
-  if (publicKey && privateKey && urlEndpoint) {
-    return uploadToImageKit(file, publicKey, privateKey, urlEndpoint);
+  if (publicKey && urlEndpoint) {
+    return uploadToImageKit(file, publicKey, urlEndpoint);
   }
 
   // Otherwise, convert to base64 (for development)
@@ -57,7 +57,6 @@ export async function uploadImage(file: File): Promise<UploadResult> {
 async function uploadToImageKit(
   file: File,
   publicKey: string,
-  privateKey: string,
   urlEndpoint: string
 ): Promise<UploadResult> {
   try {
