@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { sendNotification } from "@/lib/notifications";
+import { sendNotificationToUser } from "@/lib/notifications";
 import { db } from "@/lib/db";
 
 export async function GET() {
