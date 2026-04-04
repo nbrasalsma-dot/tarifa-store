@@ -90,8 +90,8 @@ export default function CategoriesPage() {
       <main className="container mx-auto px-4 py-8">
         {/* Page Title */}
         <div className="text-center mb-12">
-          <h1 className="text-3xl md:text-4xl font-bold mb-4">تصفحي الفئات</h1>
-          <p className="text-[var(--muted-foreground)]">اكتشفي مجموعتنا المتنوعة من المنتجات الفاخرة</p>
+          <h1 className="text-3xl md:text-4xl font-bold mb-4">تصفح الفئات</h1>
+          <p className="text-[var(--muted-foreground)]">اكتشف مجموعتنا المتنوعة من المنتجات الفاخرة</p>
         </div>
 
         {/* Categories Grid */}
@@ -107,7 +107,7 @@ export default function CategoriesPage() {
             <p className="text-gray-500 mb-4">لا توجد فئات حالياً</p>
             <Link href="/products">
               <Button className="bg-[var(--gold)] hover:bg-[var(--gold-dark)]">
-                تصفحي جميع المنتجات
+                تصفح جميع المنتجات
               </Button>
             </Link>
           </div>

@@ -25,31 +25,29 @@ export interface UploadResult {
  * Upload image to ImageKit (cloud storage)
  * Falls back to base64 if ImageKit is not configured
  */
-export async function uploadImage(file: File): Promise<UploadResult> {
-  // Check file size (max 5MB)
-  if (file.size > 5 * 1024 * 1024) {
-    return { success: false, error: "حجم الملف كبير جداً (الحد الأقصى 5MB)" };
-  }
+export async function uploadImage(file: File, folderPath: string = "/products/general"): Promise<UploadResult> {
+    // Check file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+        return { success: false, error: "حجم الملف كبير جداً (الحد الأقصى 5MB)" };
+    }
 
-  // Check file type
-  const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
-  if (!allowedTypes.includes(file.type)) {
-    return { success: false, error: "نوع الملف غير مدعوم (JPEG, PNG, WebP, GIF)" };
-  }
+    // Check file type
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+    if (!allowedTypes.includes(file.type)) {
+        return { success: false, error: "نوع الملف غير مدعوم (JPEG, PNG, WebP, GIF)" };
+    }
 
-  const publicKey = process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY;
- 
-  const urlEndpoint = process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT;
+    const publicKey = process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY;
+    const urlEndpoint = process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT;
 
-  // If ImageKit is configured, use it
-  if (publicKey && urlEndpoint) {
-    return uploadToImageKit(file, publicKey, urlEndpoint);
-  }
+    // If ImageKit is configured, use it
+    if (publicKey && urlEndpoint) {
+        return uploadToImageKit(file, publicKey, urlEndpoint, folderPath); // 👈 هنا مررنا مسار المجلد
+    }
 
-  // Otherwise, convert to base64 (for development)
-  return convertToBase64(file);
+    // Otherwise, convert to base64 (for development)
+    return convertToBase64(file);
 }
-
 /**
  * Upload to ImageKit cloud storage
  * Documentation: https://docs.imagekit.io/api-reference/upload-file-api/server-side-file-upload
@@ -57,7 +55,8 @@ export async function uploadImage(file: File): Promise<UploadResult> {
 async function uploadToImageKit(
   file: File,
   publicKey: string,
-  urlEndpoint: string
+  urlEndpoint: string,
+  folderPath: string
 ): Promise<UploadResult> {
   try {
     console.log("[ImageKit] Starting upload for file:", file.name);
@@ -87,7 +86,7 @@ async function uploadToImageKit(
     formData.append("token", authData.token);
     formData.append("publicKey", publicKey);
     // Optional: add folder parameter
-    formData.append("folder", "/products");
+    formData.append("folder", folderPath);
     // Optional: use unique filename
     formData.append("useUniqueFileName", "true");
 
@@ -201,5 +200,64 @@ export async function checkImageKitConfig(): Promise<{
     };
   } catch {
     return { configured: false };
+  }
+}
+/**
+ * حذف صورة من ImageKit نهائياً باستخدام الرابط
+ * ملاحظة: هذه الدالة يجب أن تُستدعى فقط من جهة السيرفر (API Routes)
+ */
+export async function deleteImageFromImageKit(imageUrl: string): Promise<boolean> {
+  try {
+    // 1. التحقق من أن الرابط يتبع لـ ImageKit
+    if (!imageUrl || !imageUrl.includes("imagekit.io")) {
+      console.log("[Delete] Not an ImageKit URL, skipping cloud deletion.");
+      return false;
+    }
+
+    const urlEndpoint = process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT || "https://ik.imagekit.io/tarifastore";
+    const privateKey = process.env.IMAGEKIT_PRIVATE_KEY;
+
+    if (!privateKey) {
+      console.error("[Delete] Private Key is missing. Check environment variables.");
+      return false;
+    }
+
+    // 2. استخراج مسار الملف (File Path) من الرابط
+    // مثال: https://ik.imagekit.io/tarifastore/products/image.jpg -> products/image.jpg
+    const filePath = imageUrl.replace(urlEndpoint, "").split("?")[0];
+    
+    // 3. جلب بيانات الملف أولاً للحصول على معرف الملف (fileId)
+    // لأن ImageKit يتطلب fileId للحذف وليس الرابط المباشر
+    const authHeader = Buffer.from(`${privateKey}:`).toString("base64");
+    
+    const listResponse = await fetch(`https://api.imagekit.io/v1/files?path=${filePath}`, {
+      headers: { Authorization: `Basic ${authHeader}` },
+    });
+
+    if (!listResponse.ok) throw new Error("Failed to find file on ImageKit");
+    
+    const files = await listResponse.json();
+    if (!files || files.length === 0) {
+      console.log("[Delete] File not found on ImageKit server.");
+      return false;
+    }
+
+    const fileId = files[0].fileId;
+
+    // 4. تنفيذ عملية الحذف النهائية
+    const deleteResponse = await fetch(`https://api.imagekit.io/v1/files/${fileId}`, {
+      method: "DELETE",
+      headers: { Authorization: `Basic ${authHeader}` },
+    });
+
+    if (deleteResponse.ok || deleteResponse.status === 204) {
+      console.log("[Delete] Image deleted successfully from ImageKit:", filePath);
+      return true;
+    }
+
+    return false;
+  } catch (error) {
+    console.error("[ImageKit] Delete error:", error);
+    return false;
   }
 }

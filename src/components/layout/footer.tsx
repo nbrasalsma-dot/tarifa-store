@@ -32,7 +32,7 @@ export function Footer() {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-11 h-11 rounded-full bg-white/10 hover:bg-gradient-to-tr hover:from-yellow-400 hover:via-pink-500 hover:to-purple-600 flex items-center justify-center transition-all duration-300 group"
-                aria-label="تابعينا على انستغرام"
+                aria-label="تابعنا على انستغرام"
               >
                 <Instagram className="h-5 w-5 group-hover:scale-110 transition-transform" />
               </a>
@@ -50,7 +50,7 @@ export function Footer() {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-11 h-11 rounded-full bg-white/10 hover:bg-[#1DA1F2] flex items-center justify-center transition-all duration-300 group"
-                aria-label="تابعينا على تويتر"
+                aria-label="تابعنا على تويتر"
               >
                 <Twitter className="h-5 w-5 group-hover:scale-110 transition-transform" />
               </a>
@@ -59,7 +59,7 @@ export function Footer() {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-11 h-11 rounded-full bg-white/10 hover:bg-[#1877F2] flex items-center justify-center transition-all duration-300 group"
-                aria-label="تابعينا على فيسبوك"
+                aria-label="تابعنا على فيسبوك"
               >
                 <Facebook className="h-5 w-5 group-hover:scale-110 transition-transform" />
               </a>
@@ -75,7 +75,7 @@ export function Footer() {
                 { href: "/products", label: "المنتجات" },
                 { href: "/categories", label: "الفئات" },
                 { href: "/about", label: "عن المتجر" },
-                { href: "/contact", label: "تواصلي معنا" },
+                { href: "/contact", label: "تواصل معنا" },
               ].map((link) => (
                 <li key={link.href}>
                   <Link
@@ -116,14 +116,14 @@ export function Footer() {
 
           {/* Contact Info */}
           <div>
-            <h3 className="text-lg font-bold mb-6 text-[#C9A962]">تواصلي معنا</h3>
+            <h3 className="text-lg font-bold mb-6 text-[#C9A962]">تواصل معنا</h3>
             <ul className="space-y-5">
               <li className="flex items-center gap-4">
                 <div className="w-11 h-11 rounded-full bg-[#C9A962]/20 flex items-center justify-center shrink-0">
                   <Phone className="h-5 w-5 text-[#C9A962]" />
                 </div>
                 <div>
-                  <p className="text-white/40 text-sm">اتصلي بنا</p>
+                  <p className="text-white/40 text-sm">اتصل بنا</p>
                   <a
                     href={`https://wa.me/${WHATSAPP_NUMBER}`}
                     target="_blank"

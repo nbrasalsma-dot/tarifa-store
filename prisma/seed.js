@@ -6,7 +6,9 @@ const prisma = new PrismaClient();
 
 // Hash password function using Node.js crypto
 function hashPassword(password) {
-  return crypto.createHash("sha256").update(password + "tarifa_salt_2024").digest("hex");
+  const salt = crypto.randomBytes(16).toString("hex");
+  const hash = crypto.createHash("sha256").update(password + salt).digest("hex");
+  return `${salt}:${hash}`;
 }
 
 async function main() {
@@ -16,7 +18,9 @@ async function main() {
   const adminPassword = hashPassword("admin123");
   const admin = await prisma.user.upsert({
     where: { email: "admin@tarifa.com" },
-    update: {},
+    update: {
+      password: adminPassword,
+    },
     create: {
       email: "admin@tarifa.com",
       name: "جلال - الإدارة",

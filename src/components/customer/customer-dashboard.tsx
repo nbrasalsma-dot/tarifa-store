@@ -6,7 +6,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { ReuploadProofDialog } from "./reupload-proof-dialog";
 import { motion } from "framer-motion";
+import { NotificationBell } from "../layout/notification-bell";
+import { pusherClient } from "@/lib/pusher";
 import {
   User,
   Package,
@@ -27,6 +30,9 @@ import {
   MapPin,
   ShoppingBag,
   Home,
+  AlertCircle,
+  FileText,
+  RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -88,6 +94,8 @@ export function CustomerDashboard({ user, onLogout, onViewStore }: CustomerDashb
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [isReuploadOpen, setIsReuploadOpen] = useState(false);
+  const [orderToReupload, setOrderToReupload] = useState<Order | null>(null);
   const { state: wishlist, removeItem } = useWishlist();
   const [isEditing, setIsEditing] = useState(false);
   const [profileForm, setProfileForm] = useState({
@@ -97,11 +105,26 @@ export function CustomerDashboard({ user, onLogout, onViewStore }: CustomerDashb
   });
   const [isSaving, setIsSaving] = useState(false);
 
-  // Fetch orders
+// Fetch orders
   useEffect(() => {
     fetchOrders();
   }, [user.id]);
 
+  // ⚡ التحديث اللحظي للزبون: تحديث الطلبات فور تغير حالتها من الإدارة أو وصول إشعار
+  useEffect(() => {
+    if (!pusherClient || !user?.id) return;
+
+    const channel = pusherClient.subscribe(`user-${user.id}`);
+    
+    channel.bind("new-notification", () => {
+      // تحديث قائمة الطلبات صامتاً في الخلفية عند وصول الإشعار
+      fetchOrders(); 
+    });
+
+    return () => {
+      pusherClient.unsubscribe(`user-${user.id}`);
+    };
+  }, [user?.id]);
   const fetchOrders = async () => {
     setIsLoading(true);
     try {
@@ -228,9 +251,10 @@ export function CustomerDashboard({ user, onLogout, onViewStore }: CustomerDashb
               <Link href="/products">
                 <Button className="bg-[var(--gold)] hover:bg-[var(--gold-dark)] gap-2">
                   <ShoppingBag className="h-4 w-4" />
-                  <span className="hidden sm:inline">تسوقي الآن</span>
+                  <span className="hidden sm:inline">تسوق الآن</span>
                 </Button>
               </Link>
+              <NotificationBell userId={user.id} />
               <Avatar>
                 <AvatarFallback className="bg-[var(--gold)] text-white">
                   {user.name.charAt(0)}
@@ -607,7 +631,41 @@ export function CustomerDashboard({ user, onLogout, onViewStore }: CustomerDashb
                   )}
                 </div>
               </div>
+              {/* --- إضافة جديدة: قسم مراجعة نص رسالة الواتساب --- */}
+              <div className="p-4 bg-blue-50 rounded-lg space-y-2 border border-blue-100 overflow-hidden">
+                <p className="font-black text-blue-900 text-xs flex items-center gap-2">
+                  <FileText className="h-4 w-4" /> مراجعة نص رسالة الطلب المرسلة:
+                </p>
+                <div className="bg-white p-3 rounded border border-blue-100 shadow-inner">
+                  <ScrollArea className="h-28 w-full text-[10px] leading-relaxed text-gray-600 font-mono whitespace-pre-wrap overflow-auto">
+                    {/* بناء نص الرسالة للعرض فقط لكي يتأكد العميل مما أرسله */}
+                    {`*طلب جديد من متجر تَرِفَة* 🛒\n\n👤 *الاسم:* ${selectedOrder.customer?.name}\n📞 *الهاتف:* ${selectedOrder.phone}\n📍 *العنوان:* ${selectedOrder.address}\n💰 *الإجمالي:* ${formatCurrency(selectedOrder.totalAmount)}`}
+                  </ScrollArea>
+                </div>
+              </div>
 
+              {/* --- إضافة جديدة: زر إعادة رفع الإثبات (يظهر فقط عند الرفض CANCELLED) --- */}
+              {selectedOrder.status === "CANCELLED" && (
+                <div className="p-4 bg-red-50 rounded-xl border-2 border-dashed border-red-200 text-center space-y-3 my-2 animate-in fade-in zoom-in duration-300">
+                  <div className="flex items-center justify-center gap-2 text-red-700 font-black text-sm">
+                    <AlertCircle className="h-5 w-5" />
+                    <span>عذراً، تم رفض إثبات الدفع!</span>
+                  </div>
+                  <p className="text-[11px] text-red-600 leading-tight">يبدو أن هناك خطأ في صورة الحوالة أو البيانات. لا تقلق، يمكنك تصحيح ذلك الآن.</p>
+                  <Button 
+                    className="w-full bg-red-600 hover:bg-red-700 text-white font-black gap-2 h-11 shadow-lg"
+                    onClick={() => {
+                      setOrderToReupload(selectedOrder); // 👈 قمنا بتغييرها إلى الدالة الصحيحة
+                      setSelectedOrder(null); 
+                      setTimeout(() => {
+                        setIsReuploadOpen(true); 
+                      }, 300);
+                    }}
+                  >
+                    <RefreshCw className="h-4 w-4" /> البدء في إعادة رفع الإثبات
+                  </Button>
+                </div>
+              )}
               <div className="space-y-2">
                 <p className="font-medium">المنتجات</p>
                 {selectedOrder.items.map((item, index) => (
@@ -645,6 +703,16 @@ export function CustomerDashboard({ user, onLogout, onViewStore }: CustomerDashb
           )}
         </DialogContent>
       </Dialog>
+      {/* --- إضافة نافذة إعادة رفع إثبات الدفع المستقلة --- */}
+      <ReuploadProofDialog
+        isOpen={isReuploadOpen}
+        onClose={() => {
+          setIsReuploadOpen(false);
+          setOrderToReupload(null);
+        }}
+        order={orderToReupload}
+        onSuccess={fetchOrders} // سيقوم بتحديث قائمة الطلبات تلقائياً بعد نجاح الرفع
+      />
     </div>
   );
 }

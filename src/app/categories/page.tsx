@@ -175,13 +175,13 @@ export default function CategoriesPage() {
           >
             <span className="text-[#C9A962] text-sm tracking-[0.3em] uppercase mb-4 block">
               <Sparkles className="h-4 w-4 inline ml-2" />
-              استكشفي
+              استكشف
             </span>
             <h1 className="text-4xl md:text-5xl font-bold text-[#3D3021] mb-4">
               التصنيفات
             </h1>
             <p className="text-[#8B7355] max-w-xl mx-auto text-lg">
-              تصفحي منتجاتنا حسب التصنيف واكتشفي ما يناسبك
+              تصفح منتجاتنا حسب التصنيف واكتشف ما يناسبك
             </p>
           </motion.div>
 

@@ -189,7 +189,7 @@ export default function CategoryPage() {
               <p className="text-xl text-[#8B7355] mb-4">لا توجد منتجات في هذه الفئة</p>
               <Link href="/products">
                 <Button className="bg-gradient-to-r from-[#C9A962] to-[#B8956E] hover:from-[#B8956E] hover:to-[#9A7B4F] text-white">
-                  تصفحي جميع المنتجات
+                  تصفح جميع المنتجات
                 </Button>
               </Link>
             </div>

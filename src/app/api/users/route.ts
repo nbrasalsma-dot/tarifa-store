@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { z } from "zod";
 import { verifyToken } from "@/lib/security";
+export const dynamic = "force-dynamic";
 
 const updateSchema = z.object({
   userId: z.string(),
@@ -9,7 +10,7 @@ const updateSchema = z.object({
   phone: z.string().min(6).optional(),
   address: z.string().max(200).optional(),
   isActive: z.boolean().optional(),
-  role: z.enum(["ADMIN", "AGENT", "CUSTOMER"]).optional(),
+  role: z.enum(["ADMIN", "AGENT", "MERCHANT", "CUSTOMER"]).optional(),
 });
 
 /**
@@ -39,8 +40,15 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const role = searchParams.get("role");
 
-    const where: Record<string, string> = {};
-    if (role) where.role = role;
+    // غيرنا النوع إلى any عشان يقبل الفلتر المتقدم
+    const where: any = {}; 
+    
+    if (role) {
+      where.role = role;
+    } else {
+      // --- إضافة سحرية: إذا الإدارة طلبت كل المستخدمين، نستثني الزوار (GUEST) ---
+      where.role = { not: "GUEST" };
+    }
 
     const users = await db.user.findMany({
       where,

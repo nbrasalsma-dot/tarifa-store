@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
+import { NotificationBell } from "./notification-bell";
 import {
   ShoppingCart,
   Heart,
@@ -74,7 +75,7 @@ export function Navbar({
     { href: "/products", label: "المنتجات" },
     { href: "/categories", label: "الفئات" },
     { href: "/about", label: "عن المتجر" },
-    { href: "/contact", label: "تواصلي معنا" },
+    { href: "/contact", label: "تواصل معنا" },
   ];
 
   const isActive = (href: string) => {
@@ -104,7 +105,7 @@ export function Navbar({
       <div className="bg-gradient-to-r from-[#3D3021] via-[#4A3D2E] to-[#3D3021] text-white py-2 text-center text-sm">
         <div className="container mx-auto px-4 flex items-center justify-center gap-2">
           <Sparkles className="h-3 w-3 text-[#C9A962]" />
-          <span className="text-white/80">توصيل مجاني للطلبات فوق 50,000 ريال</span>
+          <span className="text-white/90 font-medium tracking-wide">✨ تَرِفَة .. وجهتكِ الأولى للأناقة والجمال ✨</span>
           <Sparkles className="h-3 w-3 text-[#C9A962]" />
         </div>
       </div>
@@ -114,7 +115,8 @@ export function Navbar({
           {/* Mobile Menu Button */}
           <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="md:hidden hover:bg-[#FAF7F2] shrink-0">
+              {/* أضفنا hidden قبل md:hidden لكي يختفي تماماً في الجوال */}
+              <Button variant="ghost" size="icon" className="hidden md:hidden hover:bg-[#FAF7F2] shrink-0">
                 <Menu className="h-6 w-6 text-[#3D3021]" />
               </Button>
             </SheetTrigger>
@@ -304,11 +306,12 @@ export function Navbar({
 
           {/* Actions */}
           <div className="flex items-center gap-1 sm:gap-2 md:gap-3">
+            {user && <NotificationBell userId={user.id} />}
             {/* Wishlist - Always visible */}
             <Button
               variant="ghost"
               size="icon"
-              className="relative hover:bg-[#FAF7F2] rounded-full shrink-0 h-10 w-10"
+              className="relative hover:bg-[#FAF7F2] rounded-full shrink-0 h-10 w-10 hidden md:flex"
               onClick={handleWishlistClick}
             >
               <Heart className="h-5 w-5 text-[#3D3021]" />
@@ -327,7 +330,7 @@ export function Navbar({
             <Button
               variant="ghost"
               size="icon"
-              className="relative hover:bg-[#FAF7F2] rounded-full shrink-0 h-10 w-10"
+              className="relative hover:bg-[#FAF7F2] rounded-full shrink-0 h-10 w-10 hidden md:flex"
               onClick={onOpenCart}
             >
               <ShoppingCart className="h-5 w-5 text-[#3D3021]" />
@@ -395,7 +398,7 @@ export function Navbar({
               <Button
                 variant="ghost"
                 size="icon"
-                className="md:hidden hover:bg-[#FAF7F2] shrink-0 h-10 w-10"
+                className="hidden md:hidden hover:bg-[#FAF7F2] shrink-0 h-10 w-10"
                 onClick={onOpenAuth}
               >
                 <User className="h-5 w-5 text-[#3D3021]" />

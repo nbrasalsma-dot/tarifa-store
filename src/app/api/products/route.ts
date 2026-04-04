@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { pusherServer } from "@/lib/pusher";
+import { sendNotificationToAdmins } from "@/lib/notifications";
+import { deleteImageFromImageKit } from "@/lib/upload";
+
 
 // Get all products
 export async function GET(request: NextRequest) {
@@ -61,6 +65,14 @@ export async function POST(request: NextRequest) {
       categoryId,
       agentId,
       isFeatured,
+      colors,
+      sizes,
+      videoUrl,
+      featuresAr,
+      usageAr,
+      ingredientsAr,
+      inStock,
+      estimatedDays,
     } = body;
 
     const product = await db.product.create({
@@ -77,8 +89,28 @@ export async function POST(request: NextRequest) {
         categoryId,
         agentId,
         isFeatured: isFeatured || false,
+        colors: typeof colors === 'object' ? JSON.stringify(colors) : colors, // <-- أضفنا هذا السطر لحفظها في القاعدة
+        sizes: typeof sizes === 'object' ? JSON.stringify(sizes) : sizes,
+        videoUrl,
+        featuresAr,
+        usageAr,
+        ingredientsAr,
+        inStock: inStock !== undefined ? inStock : true,
+        estimatedDays: estimatedDays ? parseInt(estimatedDays) : null,
       },
     });
+    // 1. إشعار الإدارة بوجود منتج جديد
+    await sendNotificationToAdmins({
+      type: "SYSTEM",
+      title: "منتج جديد تمت إضافته 🏷️",
+      message: `تم إضافة منتج جديد بعنوان: ${product.nameAr}، يرجى مراجعته.`,
+      data: { productId: product.id }
+    });
+
+    // 2. تحديث الواجهة الرئيسية للزوار صامتاً
+    if (pusherServer) {
+      await pusherServer.trigger("tarfah-public-channel", "public-update", {});
+    }
 
     return NextResponse.json({ success: true, product });
   } catch (error) {
@@ -103,6 +135,8 @@ export async function PUT(request: NextRequest) {
         price: data.price ? parseFloat(data.price) : undefined,
         originalPrice: data.originalPrice ? parseFloat(data.originalPrice) : null,
         stock: data.stock ? parseInt(data.stock) : undefined,
+        colors: typeof data.colors === 'object' ? JSON.stringify(data.colors) : data.colors,
+        sizes: typeof data.sizes === 'object' ? JSON.stringify(data.sizes) : data.sizes,
       },
     });
 
@@ -128,13 +162,60 @@ export async function DELETE(request: NextRequest) {
         { status: 400 }
       );
     }
-
-    await db.product.update({
+      // 1. جلب بيانات المنتج للحصول على روابط الصور قبل الحذف
+    const productData = await db.product.findUnique({
       where: { id: productId },
-      data: { isActive: false },
+      select: { mainImage: true, images: true }
     });
 
-    return NextResponse.json({ success: true });
+    if (productData) {
+      // 2. حذف الصورة الأساسية من السحابة
+      if (productData.mainImage) {
+        await deleteImageFromImageKit(productData.mainImage);
+      }
+
+      // 3. حذف صور المعرض (Gallery) من السحابة
+      if (productData.images) {
+        try {
+          const additionalImages = JSON.parse(productData.images);
+          if (Array.isArray(additionalImages)) {
+            for (const imgUrl of additionalImages) {
+              // تجنب تكرار حذف الصورة الأساسية إذا كانت موجودة في المصفوفة
+              if (imgUrl !== productData.mainImage) {
+                await deleteImageFromImageKit(imgUrl);
+              }
+            }
+          }
+        } catch (e) {
+          console.error("Error parsing/deleting gallery images:", e);
+        }
+      }
+    }
+
+    try {
+      // محاولة الحذف النهائي من قاعدة البيانات
+      await db.product.delete({
+        where: { id: productId },
+      });
+    } catch (error: any) {
+      // P2003 هو كود الخطأ الذي يعني وجود طلبات مبيعات مرتبطة بالمنتج
+      if (error.code === 'P2003') {
+        // في هذه الحالة، نكتفي بإخفاء المنتج فقط للحفاظ على سجل المبيعات
+        await db.product.update({
+          where: { id: productId },
+          data: { isActive: false },
+        });
+      } else {
+        // إذا كان الخطأ شيئاً آخر غير المبيعات، أظهره في السيرفر
+        throw error;
+      }
+    }
+    // تحديث الواجهة الرئيسية للزوار صامتاً
+    if (pusherServer) {
+      await pusherServer.trigger("tarfah-public-channel", "public-update", {});
+    }
+
+    return NextResponse.json({ success: true, message: "تم حذف المنتج وصوره نهائياً" });
   } catch (error) {
     console.error("Delete product error:", error);
     return NextResponse.json(

@@ -184,6 +184,24 @@ export default function proxy(request: NextRequest) {
   const ip = getClientIP(request);
   const pathname = request.nextUrl.pathname;
   
+  // 👈 إضافة سحرية: تجاهل الحماية أثناء فترة البرمجة (Localhost)
+  const isDevelopment = process.env.NODE_ENV === 'development';
+  if (isDevelopment) {
+    // إضافة هيدر الكورس للـ API عشان ما تضرب عليك واجهات التطوير
+    const response = NextResponse.next();
+    if (pathname.startsWith('/api/')) {
+      response.headers.set('Access-Control-Allow-Origin', request.headers.get('origin') || '*');
+      response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+      response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    }
+    return response; 
+  }
+
+  // 👈 تجاوز بعض المسارات الضرورية
+  if (pathname === '/api/admin/create-manual-user') {
+    return NextResponse.next(); 
+  }
+  
   // Check if IP is blocked
   if (blockedIPs.has(ip)) {
     logSecurityEvent('BLOCKED', ip, request, 'Blocked IP');

@@ -129,9 +129,9 @@ ${formData.message}`;
             animate={{ opacity: 1, y: 0 }}
             className="text-center mb-12"
           >
-            <h1 className="text-4xl md:text-5xl font-bold mb-4">تواصلي معنا</h1>
+            <h1 className="text-4xl md:text-5xl font-bold mb-4">تواصل معنا</h1>
             <p className="text-xl text-[var(--muted-foreground)]">
-              نحن هنا لمساعدتك! تواصلي معنا بأي طريقة تناسبك
+              نحن هنا لمساعدتك! تواصل معنا بأي طريقة تناسبك
             </p>
           </motion.div>
 
@@ -188,7 +188,7 @@ ${formData.message}`;
                   </div>
 
                   <div className="pt-4 border-t">
-                    <p className="font-bold mb-3">تابعينا على</p>
+                    <p className="font-bold mb-3">تابعنا على</p>
                     <div className="flex gap-3">
                       <a
                         href="https://www.instagram.com/tarifa.store.ye"
@@ -212,7 +212,7 @@ ${formData.message}`;
             >
               <Card className="p-6">
                 <CardContent className="p-0">
-                  <h2 className="text-xl font-bold mb-4">أرسلي رسالة</h2>
+                  <h2 className="text-xl font-bold mb-4">أرسل رسالة</h2>
                   <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
                       <Label>الاسم *</Label>
@@ -246,7 +246,7 @@ ${formData.message}`;
                     <div>
                       <Label>الرسالة *</Label>
                       <Textarea
-                        placeholder="اكتبي رسالتك هنا..."
+                        placeholder="اكتب رسالتك هنا..."
                         value={formData.message}
                         onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                         required

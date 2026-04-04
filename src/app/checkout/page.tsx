@@ -218,7 +218,7 @@ ${notes ? `ملاحظات: ${notes}` : ""}`;
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-4">السلة فارغة</h1>
           <Link href="/products">
-            <Button className="bg-[var(--gold)]">تصفحي المنتجات</Button>
+            <Button className="bg-[var(--gold)]">تصفح المنتجات</Button>
           </Link>
         </div>
       </div>
@@ -368,7 +368,7 @@ ${notes ? `ملاحظات: ${notes}` : ""}`;
                     <div className="pt-2">
                       <Label>رقم الحوالة *</Label>
                       <Input
-                        placeholder="أدخلي رقم الحوالة"
+                        placeholder="أدخل رقم الحوالة"
                         value={transferNumber}
                         onChange={(e) => setTransferNumber(e.target.value)}
                         className="mt-1"

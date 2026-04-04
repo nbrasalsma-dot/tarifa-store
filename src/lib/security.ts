@@ -4,6 +4,7 @@
  */
 
 import jwt from 'jsonwebtoken';
+import { NextRequest } from 'next/server';
 
 // JWT Secret - should be in environment variables
 const JWT_SECRET = process.env.JWT_SECRET || 'tarifa-secret-key-change-in-production';
@@ -130,7 +131,7 @@ export function checkRateLimit(
   key: string,
   maxAttempts: number = 5,
   windowMs: number = 60000
-): { allowed: boolean; remaining: number; resetTime: number } {
+): { allowed: boolean; remaining: number; resetTime: number; message?: string; lockedUntil?: number } {
   const now = Date.now();
   const record = rateLimitStore.get(key);
 
@@ -142,7 +143,13 @@ export function checkRateLimit(
   }
 
   if (record.count >= maxAttempts) {
-    return { allowed: false, remaining: 0, resetTime: record.resetTime };
+    return { 
+      allowed: false, 
+      remaining: 0, 
+      resetTime: record.resetTime,
+      message: "تم تجاوز عدد المحاولات المسموحة. يرجى المحاولة لاحقاً",
+      lockedUntil: record.resetTime
+    };
   }
 
   // Increment count
@@ -431,7 +438,7 @@ export function generateAccessToken(payload: {
       type: 'access',
     },
     JWT_SECRET,
-    { expiresIn: '15m' }
+    { expiresIn: '7d' }
   );
 }
 
@@ -536,7 +543,9 @@ export function logSecurityEvent(event: {
   action: string;
   userId?: string;
   ip?: string;
-  status: 'SUCCESS' | 'FAILURE';
+  email?: string;
+  userAgent?: string;
+  status: 'SUCCESS' | 'FAILURE' | 'BLOCKED';
   details?: string;
 }): void {
   const logEntry = {
@@ -639,6 +648,37 @@ export function generateRateLimitKey(
   action: string
 ): string {
   return `ratelimit:${type}:${identifier}:${action}`;
+}
+
+/**
+ * Verify authentication from request headers
+ */
+export function verifyAuth(request: NextRequest): {
+    id: string;
+    email: string;
+    role: string;
+} | null {
+    try {
+        const authHeader = request.headers.get("authorization");
+        if (!authHeader || !authHeader.startsWith("Bearer ")) {
+            return null;
+        }
+
+        const token = authHeader.split(" ")[1];
+        const result = verifyToken(token);
+
+        if (!result.valid || !result.payload) {
+            return null;
+        }
+
+        return {
+            id: result.payload.userId,
+            email: result.payload.email || "",
+            role: result.payload.role || "CUSTOMER",
+        };
+    } catch {
+        return null;
+    }
 }
 
 /**

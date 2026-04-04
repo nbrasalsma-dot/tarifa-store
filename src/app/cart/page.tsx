@@ -123,10 +123,10 @@ export default function CartPage() {
             <div className="text-center py-20">
               <ShoppingCart className="h-20 w-20 mx-auto text-gray-300 mb-4" />
               <h2 className="text-xl font-semibold mb-2">السلة فارغة</h2>
-              <p className="text-gray-500 mb-6">لم تضيفي أي منتجات للسلة بعد</p>
+              <p className="text-gray-500 mb-6">لم يتم أضافة أي منتجات للسلة بعد</p>
               <Link href="/products">
                 <Button className="bg-[var(--gold)] hover:bg-[var(--gold-dark)]">
-                  تصفحي المنتجات
+                  تصفح المنتجات
                   <ChevronLeft className="mr-2 h-4 w-4" />
                 </Button>
               </Link>
@@ -246,7 +246,7 @@ export default function CartPage() {
                       size="lg"
                       onClick={handleCheckout}
                     >
-                      {!user ? "سجلي الدخول للمتابعة" : "إتمام الشراء"}
+                      {!user ? "سجل الدخول للمتابعة" : "إتمام الشراء"}
                       <ArrowRight className="mr-2 h-4 w-4" />
                     </Button>
 

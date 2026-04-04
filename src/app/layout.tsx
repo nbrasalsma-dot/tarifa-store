@@ -1,9 +1,10 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Tajawal, Amiri } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { CartProvider } from "@/contexts/cart-context";
 import { WishlistProvider } from "@/contexts/wishlist-context";
+import { PusherListener } from "@/components/shared/pusher-listener";
 
 const tajawal = Tajawal({
   variable: "--font-tajawal",
@@ -17,24 +18,30 @@ const amiri = Amiri({
   weight: ["400", "700"],
 });
 
+export const viewport: Viewport = {
+    themeColor: "#3D3021", // لون الشريط العلوي ليناسب فخامة ترفة
+    width: "device-width",
+    initialScale: 1,
+    maximumScale: 1,
+    userScalable: false, // يمنع التكبير بالأصابع ليعطي شعور التطبيق الحقيقي
+    viewportFit: "cover", // يجعل المحتوى يملأ الشاشة بالكامل حتى خلف النتوء (Notch)
+};
+
 export const metadata: Metadata = {
   title: "تَرِفَة | متجر الأناقة والجمال",
   description: "متجر تَرِفَة - وجهتك الأولى للأكسسوارات وأدوات التجميل والعطور الفاخرة في اليمن",
-  keywords: ["ترفة", "متجر", "أكسسوارات", "تجميل", "عطور", "مكياج", "نسائي", "يمن", "فاخر"],
-  authors: [{ name: "تَرِفَة" }],
-  icons: {
-    icon: [
-      { url: "/favicon.png", sizes: "32x32", type: "image/png" },
-    ],
-    apple: [
-      { url: "/favicon.png", sizes: "180x180", type: "image/png" },
-    ],
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "تَرِفَة",
   },
-  openGraph: {
-    title: "تَرِفَة | متجر الأناقة والجمال",
-    description: "وجهتك الأولى للأكسسوارات وأدوات التجميل والعطور الفاخرة",
-    type: "website",
-    images: ["/logo-transparent.jpg"],
+  formatDetection: {
+    telephone: false,
+  },
+  icons: {
+    icon: "/favicon.png",
+    apple: "/favicon.png",
   },
 };
 
@@ -50,6 +57,7 @@ export default function RootLayout({
       >
         <CartProvider>
           <WishlistProvider>
+            <PusherListener />
             {children}
           </WishlistProvider>
         </CartProvider>

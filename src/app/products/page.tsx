@@ -40,6 +40,7 @@ import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { useCart } from "@/contexts/cart-context";
 import { useWishlist } from "@/contexts/wishlist-context";
+import { useRouter } from "next/navigation";
 import { toast } from "@/hooks/use-toast";
 
 interface UserData {
@@ -75,13 +76,14 @@ const WHATSAPP_NUMBER = "967776080395";
 
 export default function ProductsPage() {
   const [user, setUser] = useState<UserData | null>(null);
+  const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<string>("newest");
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
@@ -218,139 +220,6 @@ export default function ProductsPage() {
         }}
       />
 
-      {/* Product Detail Dialog */}
-      <Dialog open={!!selectedProduct} onOpenChange={() => setSelectedProduct(null)}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-white rounded-3xl">
-          {selectedProduct && (
-            <div className="grid md:grid-cols-2 gap-8 p-4">
-              <div className="relative aspect-square rounded-2xl overflow-hidden bg-[#FAF7F2]">
-                <img src={selectedProduct.mainImage} alt={selectedProduct.nameAr} className="w-full h-full object-cover" />
-                {selectedProduct.originalPrice && selectedProduct.originalPrice > selectedProduct.price && (
-                  <Badge className="absolute top-4 right-4 bg-gradient-to-r from-rose-500 to-pink-500 text-white px-4 py-2 rounded-full">
-                    خصم {Math.round((1 - selectedProduct.price / selectedProduct.originalPrice) * 100)}%
-                  </Badge>
-                )}
-              </div>
-              <div className="flex flex-col gap-5">
-                <div>
-                  <p className="text-sm text-[#C9A962] font-medium mb-2 uppercase tracking-wider">
-                    {selectedProduct.category?.nameAr || "بدون تصنيف"}
-                  </p>
-                  <h2 className="text-3xl font-bold text-[#3D3021]">{selectedProduct.nameAr}</h2>
-                </div>
-                <div className="flex items-center gap-4">
-                  <span className="text-4xl font-bold text-[#8B7355]">
-                    {selectedProduct.price.toLocaleString()} ر.ي
-                  </span>
-                  {selectedProduct.originalPrice && selectedProduct.originalPrice > selectedProduct.price && (
-                    <span className="text-xl text-[#A69B8D] line-through">
-                      {selectedProduct.originalPrice.toLocaleString()} ر.ي
-                    </span>
-                  )}
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className={`w-3 h-3 rounded-full ${selectedProduct.stock > 0 ? 'bg-emerald-500' : 'bg-rose-500'}`}></span>
-                  <span className="text-[#5D5D5D]">
-                    {selectedProduct.stock > 0 ? `متوفر (${selectedProduct.stock} قطعة)` : "غير متوفر"}
-                  </span>
-                </div>
-
-                {isInCart(selectedProduct.id) && (
-                  <div className="flex items-center gap-4 p-4 bg-[#FAF7F2] rounded-xl">
-                    <span className="font-medium text-[#3D3021]">الكمية:</span>
-                    <div className="flex items-center gap-3 bg-white rounded-full p-1">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-9 w-9 p-0 rounded-full"
-                        onClick={() => updateQuantity(selectedProduct.id, getItemQuantity(selectedProduct.id) - 1)}
-                      >
-                        <Minus className="h-4 w-4" />
-                      </Button>
-                      <span className="w-10 text-center font-bold text-lg">{getItemQuantity(selectedProduct.id)}</span>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-9 w-9 p-0 rounded-full"
-                        onClick={() => updateQuantity(selectedProduct.id, getItemQuantity(selectedProduct.id) + 1)}
-                        disabled={getItemQuantity(selectedProduct.id) >= selectedProduct.stock}
-                      >
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                )}
-
-                <div className="flex flex-col gap-4 mt-4">
-                  <Button
-                    size="lg"
-                    className="bg-gradient-to-r from-[#C9A962] to-[#B8956E] hover:from-[#B8956E] hover:to-[#9A7B4F] text-white py-7 rounded-full text-lg"
-                    disabled={selectedProduct.stock === 0}
-                    onClick={() => {
-                      if (!isInCart(selectedProduct.id)) {
-                        addToCart({
-                          productId: selectedProduct.id,
-                          name: selectedProduct.name,
-                          nameAr: selectedProduct.nameAr,
-                          price: selectedProduct.price,
-                          originalPrice: selectedProduct.originalPrice,
-                          image: selectedProduct.mainImage,
-                          quantity: 1,
-                          stock: selectedProduct.stock,
-                        });
-                        toast({ title: "تمت الإضافة", description: "تم إضافة المنتج للسلة" });
-                      }
-                    }}
-                  >
-                    {isInCart(selectedProduct.id) ? (
-                      <>
-                        <Check className="h-5 w-5 ml-2" />
-                        في السلة
-                      </>
-                    ) : (
-                      <>
-                        <ShoppingCart className="h-5 w-5 ml-2" />
-                        أضف للسلة
-                      </>
-                    )}
-                  </Button>
-                  <div className="flex gap-3">
-                    <Button
-                      variant="outline"
-                      className={`flex-1 py-6 rounded-full ${isInWishlist(selectedProduct.id) ? 'border-rose-400 text-rose-500' : 'border-[#C9A962] text-[#8B7355]'}`}
-                      onClick={() => {
-                        toggleWishlist({
-                          productId: selectedProduct.id,
-                          name: selectedProduct.name,
-                          nameAr: selectedProduct.nameAr,
-                          price: selectedProduct.price,
-                          originalPrice: selectedProduct.originalPrice,
-                          image: selectedProduct.mainImage,
-                        });
-                        toast({
-                          title: isInWishlist(selectedProduct.id) ? "تمت الإزالة" : "تمت الإضافة",
-                          description: isInWishlist(selectedProduct.id) ? "تم إزالة المنتج من المفضلة" : "تم إضافة المنتج للمفضلة",
-                        });
-                      }}
-                    >
-                      <Heart className={`h-5 w-5 ml-2 ${isInWishlist(selectedProduct.id) ? 'fill-rose-500' : ''}`} />
-                      {isInWishlist(selectedProduct.id) ? 'في المفضلة' : 'أضف للمفضلة'}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="flex-1 py-6 rounded-full border-[#25D366] text-[#25D366] hover:bg-[#25D366]/10"
-                      onClick={() => openWhatsApp(`استفسار عن منتج: ${selectedProduct.nameAr}`)}
-                    >
-                      <MessageCircle className="h-5 w-5 ml-2" />
-                      واتساب
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
 
       {/* Main Content */}
       <main className="flex-1 pt-24 md:pt-28 pb-8">
@@ -363,13 +232,13 @@ export default function ProductsPage() {
           >
             <span className="text-[#C9A962] text-sm tracking-[0.3em] uppercase mb-4 block">
               <Sparkles className="h-4 w-4 inline ml-2" />
-              تسوقي الآن
+              تسوق الآن
             </span>
             <h1 className="text-4xl md:text-5xl font-bold text-[#3D3021] mb-4">
               جميع المنتجات
             </h1>
             <p className="text-[#8B7355] max-w-xl mx-auto text-lg">
-              اكتشفي مجموعتنا المتنوعة من المنتجات الفاخرة المختارة بعناية
+              اكتشف مجموعتنا المتنوعة من المنتجات الفاخرة المختارة بعناية
             </p>
           </motion.div>
 
@@ -380,7 +249,7 @@ export default function ProductsPage() {
                 <div className="relative">
                   <Search className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[#C9A962]" />
                   <Input
-                    placeholder="ابحثي عن منتجات..."
+                    placeholder="ابحث عن منتجات..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="pr-12 h-12 rounded-xl border-[#E8E0D8] focus:border-[#C9A962] bg-[#FAF7F2]"
@@ -429,7 +298,7 @@ export default function ProductsPage() {
                 <Search className="h-12 w-12 text-[#C9A962]" />
               </div>
               <h3 className="text-xl font-bold text-[#3D3021] mb-2">لا توجد منتجات</h3>
-              <p className="text-[#8B7355] mb-6">جربي تغيير الفلاتر أو البحث بكلمات أخرى</p>
+              <p className="text-[#8B7355] mb-6">جرب تغيير الفلاتر أو البحث بكلمات أخرى</p>
               <Button
                 className="bg-gradient-to-r from-[#C9A962] to-[#B8956E] text-white rounded-full px-8"
                 onClick={() => { setSelectedCategory("all"); setSearchQuery(""); }}
@@ -452,7 +321,7 @@ export default function ProductsPage() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.05 }}
                     className="group cursor-pointer"
-                    onClick={() => setSelectedProduct(product)}
+                    onClick={() => router.push(`/products/${product.id}`)}
                   >
                     <Card className="overflow-hidden border-0 shadow-lg hover:shadow-2xl transition-all duration-500 bg-white rounded-2xl">
                       <div className="relative aspect-square overflow-hidden">

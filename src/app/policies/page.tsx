@@ -161,7 +161,7 @@ function PoliciesContent() {
               سياسات تَرِفَة
             </h1>
             <p className="text-[#8B7355] max-w-2xl mx-auto text-lg">
-              نلتزم بتقديم أفضل تجربة تسوق لكي. تعرفي على سياساتنا المختلفة.
+              نلتزم بتقديم أفضل تجربة تسوق لك. تعرفي على سياساتنا المختلفة.
             </p>
           </motion.div>
 
@@ -210,7 +210,7 @@ function PoliciesContent() {
               <CardContent className="p-8 md:p-12">
                 <div className="text-center mb-8">
                   <h3 className="text-2xl md:text-3xl font-bold mb-3">هل لديكِ أي استفسار؟</h3>
-                  <p className="text-white/70">فريق خدمة العملاء جاهز لمساعدتكِ</p>
+                  <p className="text-white/70">فريق خدمة العملاء جاهز لمساعدتك</p>
                 </div>
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                   <a
@@ -220,14 +220,14 @@ function PoliciesContent() {
                     className="flex items-center gap-3 bg-[#25D366] hover:bg-[#22C55E] text-white px-8 py-4 rounded-full font-medium transition-all duration-300 hover:scale-105"
                   >
                     <MessageCircle className="h-5 w-5" />
-                    تواصلي عبر واتساب
+                    تواصل معنا عبر واتساب
                   </a>
                   <a
                     href="mailto:tarifa.store.ye@gmail.com"
                     className="flex items-center gap-3 bg-white/10 hover:bg-white/20 text-white px-8 py-4 rounded-full font-medium transition-all duration-300 hover:scale-105"
                   >
                     <Mail className="h-5 w-5" />
-                    راسلينا بالبريد
+                    راسلنا عبر البريد
                   </a>
                 </div>
               </CardContent>
@@ -256,12 +256,12 @@ function ShippingPolicy() {
     },
     {
       title: "تكلفة التوصيل",
-      description: "توصيل مجاني للطلبات فوق 50,000 ريال",
+      description: "توصيل مجاني للطلبات فوق 25,000الف ريال",
       icon: CreditCard,
     },
     {
       title: "تتبع الطلب",
-      description: "يمكنكِ متابعة حالة طلبك من حسابك",
+      description: "يمكنك متابعة حالة طلبك من حسابك",
       icon: Package,
     },
   ];
@@ -305,21 +305,21 @@ function ShippingPolicy() {
             <div>
               <h4 className="font-bold text-[#3D3021] mb-2">رسوم التوصيل</h4>
               <ul className="list-disc list-inside space-y-2">
-                <li>صنعاء: 1,500 ريال</li>
-                <li>المحافظات القريبة (تعز، الحديدة، ذمار): 2,500 ريال</li>
+                <li>داخل محافظة ذمار مجاني</li>
+                <li>المحافظات القريبة (تعز، الحديدة، صنعاء): 2,500 ريال</li>
                 <li>المحافظات البعيدة: 3,500 ريال</li>
-                <li>توصيل مجاني للطلبات فوق 50,000 ريال</li>
+                <li>توصيل مجاني للطلبات فوق 25,000الف  ريال</li>
               </ul>
             </div>
 
             <div>
               <h4 className="font-bold text-[#3D3021] mb-2">متطلبات التوصيل</h4>
-              <p>يرجى التأكد من صحة العنوان ورقم الهاتف. في حال عدم التمكن من التواصل معكِ، سيتم إرجاع الطلب بعد 3 محاولات.</p>
+              <p>يرجى التأكد من صحة العنوان ورقم الهاتف. في حال عدم التمكن من التواصل معك، سيتم إرجاع الطلب بعد 3 محاولات.</p>
             </div>
 
             <div>
               <h4 className="font-bold text-[#3D3021] mb-2">تغليف المنتجات</h4>
-              <p>جميع منتجاتنا يتم تغليفها بعناية فائقة بعلب فاخرة للحفاظ على جودتها ووصولها إليكِ بحالة مثالية.</p>
+              <p>جميع منتجاتنا يتم تغليفها بعناية فائقة بعلب فاخرة للحفاظ على جودتها ووصولها إليك بحالة مثالية.</p>
             </div>
           </div>
         </CardContent>
@@ -350,7 +350,7 @@ function ReturnsPolicy() {
           </div>
           <h3 className="text-2xl font-bold text-[#3D3021] mb-2">7 أيام للإرجاع</h3>
           <p className="text-[#8B7355] max-w-md mx-auto">
-            يمكنكِ إرجاع أو استبدال المنتج خلال 7 أيام من تاريخ الاستلام
+            يمكنك إرجاع أو استبدال المنتج خلال 7 أيام من تاريخ الاستلام
           </p>
         </CardContent>
       </Card>
@@ -391,10 +391,10 @@ function ReturnsPolicy() {
         <CardContent>
           <div className="space-y-4">
             {[
-              { step: 1, title: "التواصل معنا", desc: "راسلينا عبر واتساب أو البريد الإلكتروني" },
-              { step: 2, title: "تقديم الطلب", desc: "قدمي طلب الإرجاع مع رقم الطلب والسبب" },
+              { step: 1, title: "التواصل معنا", desc: "راسلنا عبر واتساب أو البريد الإلكتروني" },
+              { step: 2, title: "تقديم الطلب", desc: "قدم طلب الإرجاع مع رقم الطلب والسبب" },
               { step: 3, title: "انتظار التأكيد", desc: "سيتم مراجعة طلبك خلال 24 ساعة" },
-              { step: 4, title: "إرسال المنتج", desc: "سيتم استلام المنتج منكِ أو إرساله لأقرب فرع" },
+              { step: 4, title: "إرسال المنتج", desc: "سيتم استلام المنتج منك أو إرساله لأقرب فرع" },
               { step: 5, title: "استرداد المبلغ", desc: "خلال 5-7 أيام عمل بعد استلام المنتج" },
             ].map((item, index) => (
               <div key={index} className="flex items-start gap-4">
@@ -429,7 +429,7 @@ function FAQPolicy() {
   const faqs = [
     {
       question: "كيف يمكنني تتبع طلبي؟",
-      answer: "يمكنكِ تتبع طلبك من خلال الدخول لحسابك واختيار \"طلباتي\". سيظهر لكِ حالة الطلب الحالية وآخر التحديثات.",
+      answer: "يمكنك تتبع طلبك من خلال الدخول لحسابك واختيار \"طلباتي\". سيظهر لك حالة الطلب الحالية وآخر التحديثات.",
     },
     {
       question: "ما هي طرق الدفع المتاحة؟",
@@ -453,11 +453,11 @@ function FAQPolicy() {
     },
     {
       question: "هل يمكنني تغيير عنوان التوصيل؟",
-      answer: "يمكنكِ تغيير العنوان قبل شحن الطلب. يرجى التواصل مع خدمة العملاء في أسرع وقت.",
+      answer: "يمكنك تغيير العنوان قبل شحن الطلب. يرجى التواصل مع خدمة العملاء في أسرع وقت.",
     },
     {
       question: "كيف أحصل على خصم؟",
-      answer: "اشتركي في نشرتنا البريدية للحصول على عروض حصرية. أيضاً نقدم خصم 10% لأول طلب.",
+      answer: "اشترك في نشرتنا البريدية للحصول على عروض حصرية. أيضاً نقدم خصم 10% لأول طلب.",
     },
   ];
 
@@ -488,7 +488,7 @@ function FAQPolicy() {
       <Card className="border-0 shadow-lg bg-gradient-to-r from-[#FAF7F2] to-white">
         <CardContent className="p-8 text-center">
           <HelpCircle className="h-12 w-12 text-[#C9A962] mx-auto mb-4" />
-          <h3 className="text-xl font-bold text-[#3D3021] mb-2">لم تجدي إجابة لسؤالك؟</h3>
+          <h3 className="text-xl font-bold text-[#3D3021] mb-2">لم تجد إجابة لسؤالك؟</h3>
           <p className="text-[#8B7355] mb-4">فريقنا جاهز للإجابة على جميع استفساراتك</p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <a
@@ -524,7 +524,7 @@ function TermsPolicy() {
           <div className="space-y-6">
             <section>
               <h3 className="text-xl font-bold text-[#3D3021] mb-3">1. قبول الشروط</h3>
-              <p>باستخدامكِ لموقع تَرِفَة، فإنكِ توافقين على الالتزام بهذه الشروط والأحكام. يرجى قراءتها بعناية.</p>
+              <p>باستخدامك لموقع تَرِفَة، فإنك توافق على الالتزام بهذه الشروط والأحكام. يرجى قراءتها بعناية.</p>
             </section>
 
             <section>
@@ -540,7 +540,7 @@ function TermsPolicy() {
 
             <section>
               <h3 className="text-xl font-bold text-[#3D3021] mb-3">3. الحسابات</h3>
-              <p>عند إنشاء حساب، أنتِ مسؤولة عن:</p>
+              <p>عند إنشاء حساب، أنت مسؤول عن:</p>
               <ul className="list-disc list-inside mt-2 space-y-1">
                 <li>الحفاظ على سرية كلمة المرور</li>
                 <li>جميع الأنشطة التي تتم تحت حسابك</li>
@@ -562,7 +562,7 @@ function TermsPolicy() {
               <h3 className="text-xl font-bold text-[#3D3021] mb-3">5. الطلبات والدفع</h3>
               <p>عند تقديم طلب:</p>
               <ul className="list-disc list-inside mt-2 space-y-1">
-                <li>أنتِ تؤكدين رغبتك في شراء المنتجات المحددة</li>
+                <li>أنت تؤكد رغبتك في شراء المنتجات المحددة</li>
                 <li>يجب الدفع قبل شحن الطلب</li>
                 <li>نحتفظ بالحق في رفض أي طلب</li>
               </ul>
@@ -601,7 +601,7 @@ function PrivacyPolicy() {
                 <Shield className="h-5 w-5 text-[#C9A962]" />
                 مقدمة
               </h3>
-              <p>نحن في تَرِفَة نأخذ خصوصيتكِ على محمل الجد. سياسة الخصوصية هذه توضح كيفية جمع واستخدام وحماية معلوماتك الشخصية.</p>
+              <p>نحن في تَرِفَة نأخذ خصوصيتك على محمل الجد. سياسة الخصوصية هذه توضح كيفية جمع واستخدام وحماية معلوماتك الشخصية.</p>
             </section>
 
             <section>
@@ -620,7 +620,7 @@ function PrivacyPolicy() {
               <p>نستخدم معلوماتك لـ:</p>
               <ul className="list-disc list-inside mt-2 space-y-1">
                 <li>معالجة وتوصيل طلباتك</li>
-                <li>التواصل معكِ بشأن حسابك وطلباتك</li>
+                <li>التواصل معك بشأن حسابك وطلباتك</li>
                 <li>تحسين خدماتنا وتجربتك</li>
                 <li>إرسال عروض وتحديثات (بموافقتك)</li>
                 <li>منع الاحتيال وحماية أمن الموقع</li>
@@ -650,7 +650,7 @@ function PrivacyPolicy() {
 
             <section>
               <h3 className="text-xl font-bold text-[#3D3021] mb-3">حقوقك</h3>
-              <p>لديكِ الحق في:</p>
+              <p>لديك الحق في:</p>
               <ul className="list-disc list-inside mt-2 space-y-1">
                 <li>الوصول إلى بياناتك الشخصية</li>
                 <li>تصحيح أي معلومات غير دقيقة</li>
@@ -661,19 +661,19 @@ function PrivacyPolicy() {
 
             <section>
               <h3 className="text-xl font-bold text-[#3D3021] mb-3">ملفات تعريف الارتباط (Cookies)</h3>
-              <p>نستخدم cookies لتحسين تجربتك. يمكنكِ تعطيلها من إعدادات المتصفح، لكن قد يؤثر ذلك على بعض وظائف الموقع.</p>
+              <p>نستخدم cookies لتحسين تجربتك. يمكنك تعطيلها من إعدادات المتصفح، لكن قد يؤثر ذلك على بعض وظائف الموقع.</p>
             </section>
 
             <section>
               <h3 className="text-xl font-bold text-[#3D3021] mb-3">التحديثات</h3>
-              <p>قد نقوم بتحديث سياسة الخصوصية. سنخطركِ بأي تغييرات جوهرية عبر البريد الإلكتروني.</p>
+              <p>قد نقوم بتحديث سياسة الخصوصية. سنخطرك بأي تغييرات جوهرية عبر البريد الإلكتروني.</p>
             </section>
 
             <section>
-              <h3 className="text-xl font-bold text-[#3D3021] mb-3">تواصلي معنا</h3>
+              <h3 className="text-xl font-bold text-[#3D3021] mb-3">تواصل معنا</h3>
               <p>لأي استفسارات حول الخصوصية:</p>
               <ul className="list-disc list-inside mt-2 space-y-1">
-                <li>البريد الإلكتروني: tarifa.store.ye@gmail.com</li>
+                <li>البريد الإلكتروني:nbrask711@gmail.com</li>
                 <li>واتساب: +967 776 080 395</li>
               </ul>
             </section>

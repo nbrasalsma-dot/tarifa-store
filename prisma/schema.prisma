@@ -6,8 +6,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
 
@@ -34,6 +34,9 @@ model User {
   agentConvs       Conversation[]  @relation("AgentConversations")
   messages         Message[]
   verificationCodes VerificationCode[]
+  merchant          Merchant?
+  notifications     Notification[]
+  reviews           Review[]
 
   @@map("users")
 }
@@ -41,7 +44,42 @@ model User {
 enum UserRole {
   ADMIN      // الإدارة
   AGENT      // المندوبة
+  MERCHANT   // التاجر جديد
   CUSTOMER   // العميلة
+  GUEST      // زائر/ضيف (للمحادثات الفورية) 👈 أضف هذا السطر
+}
+
+// ==================== Merchants (التجار) ====================
+
+model Merchant {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  storeName         String   // اسم المحل
+  storeType         String   // نوع المنتجات
+  fullName          String   // الاسم الكامل
+  phone             String   // رقم الجوال
+  email             String   // البريد الإلكتروني
+  address           String   // عنوان المحل
+  identityCardImage String   // صورة البطاقة الشخصية
+  // بيانات الدفع
+  jeibWallet        String?  // محفظة جيب
+  kashWallet        String?  // محفظة كاش
+  jawaliWallet      String?  // محفظة جوالي
+  transferInfo      String?  // معلومات الحوالة
+  // الحالة
+  isApproved        Boolean  @default(false)  // موافقة الإدارة
+  isActive          Boolean  @default(true)
+  commissionAmount  Float    @default(0)      // مبلغ العمولة
+  totalSales        Float    @default(0)      // إجمالي المبيعات
+  totalCommission   Float    @default(0)      // إجمالي العمولات
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  // Relations
+  user              User     @relation(fields: [userId], references: [id])
+  products          Product[]
+  
+  @@map("merchants")
 }
 
 // ==================== Products ====================
@@ -74,17 +112,51 @@ model Product {
   sku         String?
   isActive    Boolean  @default(true)
   isFeatured  Boolean  @default(false)
+
+  // ==================== حقول الخطة الفخمة للتطوير ====================
+  colors          String?   // JSON: سيحفظ الاسم وكود اللون [{name: "أحمر", hex: "#FF0000"}]
+  sizes           String?   // JSON: سيحفظ المقاسات أو الأحجام ["S", "M", "L"] أو ["50ml", "100ml"]
+  videoUrl        String?   // رابط فيديو ريلز انستقرام أو يوتيوب (اختياري)
+  
+  // حقول الأكورديون (المحتوى الفخم)
+  featuresAr      String?   // المميزات
+  usageAr         String?   // طريقة الاستخدام
+  ingredientsAr   String?   // المكونات
+  
+  inStock         Boolean   @default(true)  // متوفر في المخزن؟
+  estimatedDays   Int?      // أيام التوصيل المتوقعة
+  merchantId      String?   // معرف التاجر (إن وجد)
+  // =================================================================
+
   categoryId  String?
-  agentId     String   // المندوبة التي أضافت المنتج
+  agentId     String?   // المندوبة التي أضافت المنتج (اختياري)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   // Relations
   category    Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  agent       User      @relation(fields: [agentId], references: [id])
+  agent       User?      @relation(fields: [agentId], references: [id])
+  merchant    Merchant? @relation(fields: [merchantId], references: [id])
   orderItems  OrderItem[]
+  reviews     Review[]
 
   @@map("products")
+}
+
+// ==================== Governorates (المحافظات) ====================
+
+model Governorate {
+  id              String   @id @default(cuid())
+  name            String   @unique  // اسم المحافظة بالإنجليزي
+  nameAr          String            // اسم المحافظة بالعربية
+  deliveryFee     Float    @default(0)  // رسوم التوصيل
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  orders          Order[]
+  
+  @@map("governorates")
 }
 
 // ==================== Orders ====================
@@ -101,12 +173,23 @@ model Order {
   governorate   String?     // المحافظة للتوصيل
   paymentMethod String?     // transfer / wallet
   paymentDetails String?    // JSON: transferNumber or wallet+proofImage
+
+  // ==================== حقول جديدة ====================
+  governorateId    String?   // ربط بالمحافظة
+  deliveryFee      Float     @default(0)  // رسوم التوصيل
+  locationUrl      String?   // رابط الموقع
+  paymentStatus    PaymentStatus @default(PENDING)
+  paymentConfirmedBy String? // من أكد الدفع
+  paymentConfirmedAt DateTime?
+  // ====================================================
+
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
 
   // Relations
   customer      User        @relation("CustomerOrders", fields: [customerId], references: [id])
   agent         User?       @relation("AgentOrders", fields: [agentId], references: [id], onDelete: SetNull)
+  governorateRel Governorate? @relation(fields: [governorateId], references: [id])
   items         OrderItem[]
 
   @@map("orders")
@@ -121,12 +204,19 @@ enum OrderStatus {
   CANCELLED     // ملغي
 }
 
+enum PaymentStatus {
+  PENDING    // قيد الانتظار
+  CONFIRMED  // مؤكد
+  REJECTED   // مرفوض
+}
+
 model OrderItem {
   id        String   @id @default(cuid())
   orderId   String
   productId String
   quantity  Int      @default(1)
   price     Float
+  color     String?  // اللون المختار
   createdAt DateTime @default(now())
 
   // Relations
@@ -141,7 +231,7 @@ model OrderItem {
 model Conversation {
   id          String   @id @default(cuid())
   customerId  String
-  agentId     String
+  agentId     String?
   productId   String?  // محادثة حول منتج معين
   status      ConversationStatus @default(ACTIVE)
   createdAt   DateTime @default(now())
@@ -149,7 +239,7 @@ model Conversation {
 
   // Relations
   customer    User      @relation("CustomerConversations", fields: [customerId], references: [id])
-  agent       User      @relation("AgentConversations", fields: [agentId], references: [id])
+  agent       User?     @relation("AgentConversations", fields: [agentId], references: [id])
   messages    Message[]
 
   @@map("conversations")
@@ -165,6 +255,7 @@ model Message {
   conversationId String
   senderId       String
   content        String
+  productImage   String?  // صورة منتج من المتجر
   isRead         Boolean  @default(false)
   createdAt      DateTime @default(now())
 
@@ -197,6 +288,89 @@ enum VerificationType {
   PASSWORD_RESET      // إعادة تعيين كلمة المرور
 }
 
+// ==================== Notifications (الإشعارات) ====================
+
+model Notification {
+  id          String   @id @default(cuid())
+  userId      String            // المستلم
+  type        NotificationType
+  title       String
+  message     String
+  data        String?   // JSON بيانات إضافية
+  isRead      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("notifications")
+}
+
+enum NotificationType {
+  // --- إشعارات الطلبات والدفع (Orders & Payments) ---
+  ORDER_NEW            // طلب جديد (للأدمن/التاجر)
+  ORDER_CONFIRMED      // تم تأكيد الطلب (للزبون)
+  ORDER_CLAIMED      // مندوب استلم الطلب لتجهيزه 👈 أضف هذا السطر
+  ORDER_SHIPPED        // تم الشحن (للزبون)
+  ORDER_DELIVERED      // تم التسليم (للزبون)
+  ORDER_CANCELLED      // طلب ملغي
+  PAYMENT_SUBMITTED    // الزبون رفع إثبات الدفع (للأدمن)
+  PAYMENT_CONFIRMED    // تم تأكيد الدفع (للزبون)
+  PAYMENT_REJECTED     // تم رفض الدفع (للزبون)
+
+  // --- إشعارات المنتجات والتجار (Products & Merchants) ---
+  MERCHANT_REGISTERED  // تاجر جديد سجل (للأدمن)
+  MERCHANT_APPROVED    // تم تفعيل حساب التاجر (للتاجر)
+  PRODUCT_NEW          // تاجر أضاف منتجاً جديداً (للأدمن)
+  PRODUCT_APPROVED     // تم الموافقة على المنتج (للتاجر)
+  PRODUCT_REJECTED     // تم رفض المنتج (للتاجر)
+
+  // --- إشعارات التفاعل (Interactions) ---
+  NEW_MESSAGE          // رسالة جديدة في المحادثة
+  NEW_COMMENT          // تعليق جديد
+  NEW_RATING           // تقييم جديد
+
+  // --- إشعارات عامة (General) ---
+  SYSTEM               // إشعار نظام عام
+}
+// ==================== Reviews (التقييمات والتعليقات) ====================
+
+model Review {
+  id          String   @id @default(cuid())
+  productId   String
+  userId      String
+  rating      Int      // 1-5 نجوم
+  comment     String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id])
+  
+  @@map("reviews")
+}
+
+// ==================== Advertisements (الإعلانات) ====================
+
+model Advertisement {
+  id            String    @id @default(cuid())
+  title         String
+  titleAr       String
+  description   String?
+  descriptionAr String?
+  price         Float?    // 👈 جديد: حقل السعر لإظهاره بشكل فخم
+  image         String    
+  link          String?   
+  ctaAr         String?   // 👈 جديد: نص الزر للإعلان
+  isActive      Boolean   @default(true)
+  startDate     DateTime?
+  endDate       DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  @@map("advertisements")
+}
+
 // ==================== Settings ====================
 
 model Setting {
@@ -207,4 +381,23 @@ model Setting {
   updatedAt DateTime @updatedAt
 
   @@map("settings")
+}
+// ==================== Hero Banners (بنرات الواجهة المتحركة) ====================
+
+model HeroBanner {
+  id            String   @id @default(cuid())
+  title         String   // العنوان بالإنجليزية
+  titleAr       String   // العنوان بالعربية
+  subtitleAr    String?  // 👈 جديد: العنوان الفرعي (مثل: تَرِفَة)
+  description   String?  
+  descriptionAr String?  
+  image         String   
+  link          String?  
+  ctaAr         String?  // 👈 جديد: نص الزر (مثل: تسوق الآن)
+  order         Int      @default(0) 
+  isActive      Boolean  @default(true) 
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("hero_banners")
 }

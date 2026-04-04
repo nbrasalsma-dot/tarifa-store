@@ -87,7 +87,7 @@ export function CartPanel({
             </motion.div>
             <h3 className="text-xl font-bold text-[#3D3021] mb-2">السلة فارغة</h3>
             <p className="text-[#8B7355] mb-6">
-              أضيفي منتجات للسلة للمتابعة
+              أضيف منتجات للسلة للمتابعة
             </p>
             <Button
               onClick={onClose}
@@ -123,6 +123,9 @@ export function CartPanel({
                     {/* Info */}
                     <div className="flex-1 min-w-0">
                       <h4 className="font-semibold text-[#3D3021] line-clamp-1">{item.nameAr}</h4>
+                      {item.color && (
+                        <p className="text-xs text-[#C9A962] font-medium mb-1">اللون: {item.color}</p>
+                      )}
                       <p className="text-xs text-[#8B7355] mb-2">{item.name}</p>
 
                       <div className="flex items-center gap-2 mb-3">
@@ -246,7 +249,7 @@ export function CartPanel({
                   {!user ? (
                     <>
                       <LogIn className="h-5 w-5 ml-2" />
-                      سجلي الدخول للمتابعة
+                      سجل الدخول للمتابعة
                     </>
                   ) : (
                     <>

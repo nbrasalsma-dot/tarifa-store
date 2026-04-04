@@ -7,6 +7,8 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import { NotificationBell } from "../layout/notification-bell";
+import { pusherClient } from "@/lib/pusher";
 import {
   ShoppingBag,
   Package,
@@ -31,6 +33,7 @@ import {
   ArrowUpRight,
   DollarSign,
   Home,
+  Store,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -51,6 +54,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Label } from "@/components/ui/label";
@@ -65,7 +69,9 @@ import {
 } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { ChatWidget } from "@/components/chat/chat-widget";
+import { AgentInbox } from "@/components/chat/agent-inbox";
 import { uploadImage } from "@/lib/upload";
+import { ProductFormDialog } from "@/components/shared/product-form-dialog";
 
 // WhatsApp number
 const WHATSAPP_NUMBER = "967776080395";
@@ -115,7 +121,7 @@ interface Order {
   phone: string;
   governorate: string;
   paymentMethod: string;
-  paymentDetails: string;
+  paymentDetails: any;
   customer: {
     id: string;
     name: string;
@@ -123,9 +129,10 @@ interface Order {
     email: string;
   };
   items: Array<{
-    product: { nameAr: string; mainImage: string };
+    product: { nameAr: string; mainImage?: string };
     quantity: number;
     price: number;
+    color?: string;
   }>;
 }
 
@@ -136,6 +143,9 @@ export function AgentDashboard({ user, onLogout, onViewStore }: AgentDashboardPr
   const [orders, setOrders] = useState<Order[]>([]);
   const [completedOrders, setCompletedOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+    // --- متغيرات جديدة لطلبيات المتجر (الخطوة الأولى) ---
+  const [storeOrders, setStoreOrders] = useState<Order[]>([]); // لتخزين طلبات المتجر العامة
+  const [orderSubTab, setOrderSubTab] = useState("my-orders"); // للتبديل بين "طلبياتي" و "طلبيات المتجر"
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isOrderDialogOpen, setIsOrderDialogOpen] = useState(false);
 
@@ -143,19 +153,30 @@ export function AgentDashboard({ user, onLogout, onViewStore }: AgentDashboardPr
   const [isProductDialogOpen, setIsProductDialogOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const [productForm, setProductForm] = useState({
-    name: "",
-    nameAr: "",
-    description: "",
-    descriptionAr: "",
-    price: "",
-    originalPrice: "",
-    mainImage: "",
-    stock: "",
-    categoryId: "",
-    isFeatured: false,
-    isActive: true,
-  });
+    // Delivery Fees state (نافذة رسوم التوصيل)
+  const [isDeliveryDialogOpen, setIsDeliveryDialogOpen] = useState(false);
+  const [governorates, setGovernorates] = useState<any[]>([]);
+  const [isLoadingDelivery, setIsLoadingDelivery] = useState(false);
+
+  // دالة فتح نافذة التوصيل وجلب البيانات
+  const openDeliveryDialog = async () => {
+      setIsDeliveryDialogOpen(true);
+      if (governorates.length > 0) return; 
+      
+      setIsLoadingDelivery(true);
+      try {
+          const response = await fetch("/api/governorates");
+          const data = await response.json();
+          if (data.success) {
+              setGovernorates(data.governorates || []);
+          }
+      } catch (error) {
+          console.error("Fetch delivery fees error:", error);
+      } finally {
+          setIsLoadingDelivery(false);
+      }
+  };
+
 
   // Stats
   const [stats, setStats] = useState({
@@ -167,16 +188,33 @@ export function AgentDashboard({ user, onLogout, onViewStore }: AgentDashboardPr
   useEffect(() => {
     fetchData();
   }, []);
+  // ⚡ التحديث اللحظي للمندوبة: تحديث الطلبات والمنتجات فور وصول إشعار
+  useEffect(() => {
+    if (!pusherClient || !user?.id) return;
+
+    const channel = pusherClient.subscribe(`user-${user.id}`);
+    
+    channel.bind("new-notification", () => {
+      // تحديث كل بيانات المندوبة صامتاً في الخلفية
+      fetchData(); 
+    });
+
+    return () => {
+      pusherClient.unsubscribe(`user-${user.id}`);
+    };
+  }, [user?.id]);
 
   const fetchData = async () => {
     setIsLoading(true);
     try {
       // Fetch agent's products
+      let agentProductsList: Product[] = []; // أضفنا هذا المتغير
       const productsRes = await fetch(`/api/products?agentId=${user.id}`);
       if (productsRes.ok) {
         const data = await productsRes.json();
-        setProducts(data.products || []);
-        setStats(prev => ({ ...prev, products: data.products?.length || 0 }));
+        agentProductsList = data.products || []; // حفظناها هنا
+        setProducts(agentProductsList);
+        setStats(prev => ({ ...prev, products: agentProductsList.length }));
       }
 
       // Fetch categories
@@ -191,14 +229,65 @@ export function AgentDashboard({ user, onLogout, onViewStore }: AgentDashboardPr
       if (ordersRes.ok) {
         const data = await ordersRes.json();
         const allOrders = data.orders || [];
-        // Separate pending and completed orders
-        setOrders(allOrders.filter((o: Order) => o.status !== "COMPLETED" && o.status !== "CANCELLED"));
-        setCompletedOrders(allOrders.filter((o: Order) => o.status === "COMPLETED"));
+        
+        // --- الإضافة الذكية: الفلترة والحساب ---
+        // 1. استخراج أسماء منتجات المندوب
+        const agentProductNames = agentProductsList.map(p => p.nameAr);
+        
+        // 2. جلب الطلبات اللي فيها منتج واحد على الأقل من منتجات المندوب
+        const agentOrders = allOrders.filter((order: Order) => 
+           order.items.some(item => agentProductNames.includes(item.product?.nameAr))
+        );
+
+        // 3. حساب الأرباح لمنتجات المندوب فقط داخل هذه الطلبات
+        let totalRevenue = 0;
+        agentOrders.forEach((order: Order) => {
+            if (order.status === "COMPLETED") {
+                order.items.forEach(item => {
+                    if (agentProductNames.includes(item.product?.nameAr)) {
+                        totalRevenue += (item.price * item.quantity);
+                    }
+                });
+            }
+        });
+        // --- نهاية الإضافة ---
+
+        // // Separate pending and completed orders (نستخدم agentOrders بدلاً من allOrders)
+        // setOrders(agentOrders.filter((o: Order) => o.status !== "COMPLETED" && o.status !== "CANCELLED"));
+        // setCompletedOrders(agentOrders.filter((o: Order) => o.status === "COMPLETED"));
+        // setStats(prev => ({ 
+        //   ...prev, 
+        //   orders: agentOrders.filter((o: Order) => o.status !== "COMPLETED").length,
+        //   revenue: totalRevenue // نستخدم الأرباح الصافية المحسوبة فوق
+        // }));
+
+          // --- الفرز الذكي: فصل "طلبياتي" عن "طلبات المتجر" (الخطوة الثانية) ---
+        
+          // 1. طلبياتي: إما طلبات تحتوي على منتجاتي، أو طلبات قمت أنا باستلامها (agentId يطابقني)
+        const myOrders = allOrders.filter((order: Order) => 
+            (order as any).agentId === user.id || 
+            order.items.some(item => agentProductNames.includes(item.product?.nameAr))
+        );
+
+        // 2. طلبات المتجر العامة: هي كل الطلبات الباقية التي لا تخصني حالياً
+        const generalStoreOrders = allOrders.filter((order: Order) => 
+            !myOrders.some(myOrder => myOrder.id === order.id)
+        );
+
+        // حفظ "طلبياتي"
+        setOrders(myOrders.filter((o: Order) => o.status !== "COMPLETED" && o.status !== "CANCELLED"));
+        setCompletedOrders(myOrders.filter((o: Order) => o.status === "COMPLETED"));
+        
+        // حفظ "طلبات المتجر"
+        setStoreOrders(generalStoreOrders);
+
+        // تحديث إحصائيات المندوب لتشمل طلباته الخاصة فقط
         setStats(prev => ({ 
           ...prev, 
-          orders: allOrders.filter((o: Order) => o.status !== "COMPLETED").length,
-          revenue: allOrders.reduce((sum: number, o: Order) => sum + (o.status === "COMPLETED" ? o.totalAmount : 0), 0)
+          orders: myOrders.filter((o: Order) => o.status !== "COMPLETED").length,
+          revenue: totalRevenue
         }));
+        // --- نهاية التعديل ---
       }
     } catch (error) {
       console.error("Fetch error:", error);
@@ -207,68 +296,26 @@ export function AgentDashboard({ user, onLogout, onViewStore }: AgentDashboardPr
     }
   };
 
-  const resetProductForm = () => {
-    setProductForm({
-      name: "",
-      nameAr: "",
-      description: "",
-      descriptionAr: "",
-      price: "",
-      originalPrice: "",
-      mainImage: "",
-      stock: "",
-      categoryId: "",
-      isFeatured: false,
-      isActive: true,
-    });
-    setSelectedProduct(null);
-  };
-
   const openNewProduct = () => {
-    resetProductForm();
+    setSelectedProduct(null);
     setIsProductDialogOpen(true);
   };
 
   const openEditProduct = (product: Product) => {
     setSelectedProduct(product);
-    setProductForm({
-      name: product.name,
-      nameAr: product.nameAr,
-      description: product.description || "",
-      descriptionAr: product.descriptionAr || "",
-      price: product.price.toString(),
-      originalPrice: product.originalPrice?.toString() || "",
-      mainImage: product.mainImage,
-      stock: product.stock.toString(),
-      categoryId: product.categoryId || "",
-      isFeatured: product.isFeatured,
-      isActive: product.isActive,
-    });
     setIsProductDialogOpen(true);
   };
 
-  const handleSaveProduct = async () => {
-    if (!productForm.name || !productForm.nameAr || !productForm.price || !productForm.mainImage) {
-      toast({
-        title: "خطأ",
-        description: "يرجى ملء الحقول المطلوبة",
-        variant: "destructive",
-      });
-      return;
-    }
-
+  const handleSaveProduct = async (productData: any) => {
     setIsSaving(true);
     try {
       const url = "/api/products";
       const method = selectedProduct ? "PUT" : "POST";
-      const body = selectedProduct
-        ? { id: selectedProduct.id, ...productForm, agentId: user.id }
-        : { ...productForm, agentId: user.id };
-
+      
       const response = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+        body: JSON.stringify(productData),
       });
 
       const data = await response.json();
@@ -279,8 +326,8 @@ export function AgentDashboard({ user, onLogout, onViewStore }: AgentDashboardPr
           description: selectedProduct ? "تم تحديث المنتج" : "تم إضافة المنتج",
         });
         setIsProductDialogOpen(false);
-        resetProductForm();
-        fetchData();
+        setSelectedProduct(null);
+        fetchData(); // تحديث البيانات بعد الحفظ
       } else {
         toast({
           title: "خطأ",
@@ -357,6 +404,27 @@ export function AgentDashboard({ user, onLogout, onViewStore }: AgentDashboardPr
     }
   };
 
+    // --- دالة استلام طلب من المتجر ليكون بعهدتي ---
+  const handleClaimOrder = async (orderId: string) => {
+    if (!confirm("هل أنت متأكد أنك تريد استلام وتجهيز هذا الطلب؟")) return;
+    try {
+      const response = await fetch("/api/orders", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        // سيتم إرسال حالة PROCESSING ومعرف المندوب agentId لتسجيله باسمه
+        body: JSON.stringify({ orderId, status: "PROCESSING", agentId: user.id }), 
+      });
+      if (response.ok) {
+        toast({ title: "تم", description: "تم استلام الطلب وتحويله إلى عهدتك بنجاح 📦" });
+        fetchData(); // تحديث الواجهة فوراً
+      } else {
+        toast({ title: "خطأ", description: "حدث خطأ أو ربما سبّقك مندوب آخر واستلمه", variant: "destructive" });
+      }
+    } catch (error) {
+      toast({ title: "خطأ", description: "حدث خطأ في الاتصال", variant: "destructive" });
+    }
+  };
+
   // Open WhatsApp
   const openWhatsApp = (phone: string, message?: string) => {
     const cleanPhone = phone.replace(/\D/g, '');
@@ -381,7 +449,7 @@ export function AgentDashboard({ user, onLogout, onViewStore }: AgentDashboardPr
                 alt="تَرِفَة" 
                 className="h-10 w-auto object-contain"
               />
-              <Badge className="bg-purple-500">مندوبة</Badge>
+              <Badge className="bg-purple-500">مندوب</Badge>
             </div>
 
             <div className="flex items-center gap-4">
@@ -397,10 +465,18 @@ export function AgentDashboard({ user, onLogout, onViewStore }: AgentDashboardPr
                   <span className="hidden sm:inline">المتجر</span>
                 </Button>
               )}
-              
-              <Button variant="ghost" size="icon">
-                <Bell className="h-5 w-5" />
+              {/* زر رسوم التوصيل للمندوبة */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={openDeliveryDialog}
+                className="gap-2 border-purple-200 text-purple-700 hover:bg-purple-50 shadow-sm"
+              >
+                <MapPin className="h-4 w-4" />
+                <span className="hidden sm:inline">رسوم التوصيل</span>
               </Button>
+      
+              <NotificationBell userId={user.id} />
 
               <div className="flex items-center gap-2">
                 <Avatar>
@@ -410,7 +486,7 @@ export function AgentDashboard({ user, onLogout, onViewStore }: AgentDashboardPr
                 </Avatar>
                 <div className="hidden md:block">
                   <p className="text-sm font-medium">{user.name}</p>
-                  <p className="text-xs text-[var(--muted-foreground)]">مندوبة</p>
+                  <p className="text-xs text-[var(--muted-foreground)]">مندوب</p>
                 </div>
               </div>
 
@@ -423,6 +499,45 @@ export function AgentDashboard({ user, onLogout, onViewStore }: AgentDashboardPr
       </header>
 
       <div className="container mx-auto px-4 py-6">
+        {/* === بطاقات الإحصائيات الجديدة === */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <Card className="border-0 shadow-md border-r-4 border-purple-500">
+            <CardContent className="p-4 flex items-center justify-between">
+              <div>
+                <p className="text-sm text-[var(--muted-foreground)]">منتجاتي بالموقع</p>
+                <p className="text-2xl font-bold mt-1">{stats.products}</p>
+              </div>
+              <div className="h-10 w-10 rounded-full bg-purple-100 flex items-center justify-center">
+                <ShoppingBag className="h-5 w-5 text-purple-600" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-0 shadow-md border-r-4 border-blue-500">
+            <CardContent className="p-4 flex items-center justify-between">
+              <div>
+                <p className="text-sm text-[var(--muted-foreground)]">طلبات قيد التنفيذ</p>
+                <p className="text-2xl font-bold mt-1">{stats.orders}</p>
+              </div>
+              <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+                <Package className="h-5 w-5 text-blue-600" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-0 shadow-md border-r-4 border-green-500">
+            <CardContent className="p-4 flex items-center justify-between">
+              <div>
+                <p className="text-sm text-[var(--muted-foreground)]">مبيعاتي المنجزة</p>
+                <p className="text-2xl font-bold mt-1 text-green-600">{formatCurrency(stats.revenue)}</p>
+              </div>
+              <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
+                <DollarSign className="h-5 w-5 text-green-600" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+        {/* ================================== */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="bg-white/80 backdrop-blur-sm border p-1 mb-6 flex-wrap h-auto">
             <TabsTrigger value="products" className="gap-2">
@@ -536,7 +651,131 @@ export function AgentDashboard({ user, onLogout, onViewStore }: AgentDashboardPr
 
           {/* Orders Tab */}
           <TabsContent value="orders">
-            <div className="space-y-6">
+            {/* <div className="space-y-6"> */}
+
+            {/* --- 1. أزرار التبديل بين طلبياتي وطلبات المتجر (الخطوة الثالثة) --- */}
+            <div className="flex gap-2 mb-6 bg-white p-1 rounded-lg w-fit border shadow-sm">
+              <Button 
+                variant={orderSubTab === "my-orders" ? "default" : "ghost"} 
+                onClick={() => setOrderSubTab("my-orders")}
+                className={orderSubTab === "my-orders" ? "bg-purple-600 text-white hover:bg-purple-700" : "text-gray-600"}
+                size="sm"
+              >
+                <Package className="h-4 w-4 ml-2" />
+                طلبياتي الخاصة
+              </Button>
+              <Button 
+                variant={orderSubTab === "store-orders" ? "default" : "ghost"} 
+                onClick={() => setOrderSubTab("store-orders")}
+                className={orderSubTab === "store-orders" ? "bg-blue-600 text-white hover:bg-blue-700" : "text-gray-600"}
+                size="sm"
+              >
+                <Store className="h-4 w-4 ml-2" />
+                طلبات المتجر (للمساعدة)
+                {storeOrders.length > 0 && (
+                  <Badge className="mr-2 bg-red-500 text-white">{storeOrders.length}</Badge>
+                )}
+              </Button>
+            </div>
+
+            {/* --- 2. عرض طلبات المتجر (ستكون مخفية حتى يضغط المندوب على الزر) --- */}
+            <div className={orderSubTab === "store-orders" ? "block" : "hidden"}>
+                {/* سيتم وضع جدول الإدارة الفخم هنا في الخطوة الرابعة */}
+                <Card className="border-0 shadow-lg mt-4 overflow-hidden">
+                    <CardHeader className="bg-blue-50/50 pb-4 border-b">
+                        <CardTitle className="text-blue-900 flex items-center gap-2 text-lg">
+                            <Store className="h-5 w-5 text-blue-600" /> 
+                            طلبات المتجر المتاحة للمساعدة ({storeOrders.length})
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-0">
+                        <div className="w-full bg-white">
+                            <div className="max-h-[500px] overflow-y-auto overflow-x-auto custom-scrollbar">
+                                <Table className="min-w-[900px]">
+                                    <TableHeader className="bg-gray-50 sticky top-0 z-10 shadow-sm">
+                                        <TableRow>
+                                            <TableHead className="w-[90px]">رقم الطلب</TableHead>
+                                            <TableHead className="w-[150px]">العميل</TableHead>
+                                            <TableHead className="w-[280px]">المنتجات</TableHead>
+                                            <TableHead className="w-[120px]">الحالة</TableHead>
+                                            <TableHead className="w-[120px]">المبلغ</TableHead>
+                                            <TableHead className="text-left w-[140px]">إجراءات</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {storeOrders.length === 0 ? (
+                                            <TableRow>
+                                                <TableCell colSpan={6} className="h-32 text-center text-gray-500">
+                                                    <Package className="h-8 w-8 mx-auto text-gray-300 mb-2" />
+                                                    لا توجد طلبات إضافية في المتجر حالياً.
+                                                </TableCell>
+                                            </TableRow>
+                                        ) : (
+                                            storeOrders.map((order) => (
+                                                <TableRow key={order.id} className="hover:bg-blue-50/30 transition-colors">
+                                                    <TableCell className="font-mono text-[11px] font-bold text-gray-600">
+                                                        #{order.id.slice(-6)}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <div className="flex flex-col">
+                                                            <span className="font-bold text-sm">{order.customer?.name}</span>
+                                                            <span className="text-[10px] text-gray-500" dir="ltr">{order.customer?.phone}</span>
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <div className="flex flex-col gap-1 max-w-[280px]">
+                                                            {order.items?.map((item: any, i: number) => (
+                                                                <div key={i} className="bg-gray-50 px-2 py-1 rounded border border-gray-100 text-xs flex justify-between items-center">
+                                                                    <span className="font-bold text-gray-800 truncate pr-2">{item.product?.nameAr || "منتج محذوف"}</span>
+                                                                    <Badge className="bg-gray-200 text-gray-700 hover:bg-gray-300 px-1 py-0 text-[10px]">x{item.quantity}</Badge>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell>{getStatusBadge(order.status)}</TableCell>
+                                                    <TableCell className="font-bold text-blue-700">{formatCurrency(order.totalAmount)}</TableCell>
+                                                    <TableCell className="text-left">
+                                                        <div className="flex items-center gap-2">
+                                                            {/* زر الأكشن الأساسي: استلام أو حالة التجهيز */}
+                                                            {order.status === "PENDING" ? (
+                                                                <Button
+                                                                    size="sm"
+                                                                    className="bg-green-600 hover:bg-green-700 text-white font-bold shadow-md flex-1"
+                                                                    onClick={() => handleClaimOrder(order.id)}
+                                                                >
+                                                                    <CheckCircle className="h-4 w-4 ml-1" /> استلام
+                                                                </Button>
+                                                            ) : (
+                                                                <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 flex-1 justify-center h-9">
+                                                                    قيد التجهيز
+                                                                </Badge>
+                                                            )}
+
+                                                            {/* زر المعاينة (العين) - ظاهر دائماً للجميع */}
+                                                            <Button
+                                                                size="sm"
+                                                                variant="outline"
+                                                                className="h-9 w-9 p-0 shrink-0 border-blue-200 hover:bg-blue-50 hover:border-blue-400 transition-all"
+                                                                onClick={() => setSelectedOrder(order)}
+                                                                title="عرض تفاصيل الطلب قبل الاستلام"
+                                                            >
+                                                                <Eye className="h-4 w-4 text-blue-600" />
+                                                            </Button>
+                                                        </div>
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))
+                                        )}
+                                    </TableBody>
+                                </Table>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+
+            {/* --- 3. عرض طلبياتي (الكود القديم محمي ومغلف داخل هذا الـ div الجديد) --- */}
+            <div className={`space-y-6 ${orderSubTab === "my-orders" ? "block" : "hidden"}`}>
               {/* Pending Orders */}
               <Card className="border-0 shadow-lg">
                 <CardHeader className="flex flex-row items-center justify-between">
@@ -595,7 +834,16 @@ export function AgentDashboard({ user, onLogout, onViewStore }: AgentDashboardPr
                             )}
 
                             {/* Actions */}
-                            <div className="flex gap-2 flex-wrap">
+                            <div className="flex gap-2 flex-wrap mt-2">
+                              <Button
+                                size="sm"
+                                variant="secondary"
+                                className="bg-[var(--gold)]/10 text-[var(--gold-dark)] hover:bg-[var(--gold)]/20"
+                                onClick={() => setSelectedOrder(order)}
+                              >
+                                <Eye className="h-4 w-4 ml-1" />
+                                التفاصيل
+                              </Button>
                               <Button
                                 size="sm"
                                 variant="outline"
@@ -674,206 +922,171 @@ export function AgentDashboard({ user, onLogout, onViewStore }: AgentDashboardPr
             </div>
           </TabsContent>
 
-          {/* Messages Tab */}
+         {/* Messages Tab (Inbox) */}
           <TabsContent value="messages">
-            <Card className="border-0 shadow-lg">
-              <CardHeader>
-                <CardTitle>المحادثات مع العملاء</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-12 text-[var(--muted-foreground)]">
-                  <MessageSquare className="h-16 w-16 mx-auto text-gray-300 mb-4" />
-                  <p>لا توجد محادثات حالياً</p>
-                </div>
-              </CardContent>
-            </Card>
+            {/* استدعاء صندوق الوارد الخاص بالمندوب وتمرير الـ ID الخاص به */}
+            <AgentInbox agentId={user.id} />
           </TabsContent>
         </Tabs>
       </div>
 
-      {/* Product Dialog */}
-      <Dialog open={isProductDialogOpen} onOpenChange={setIsProductDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      {/* نافذة تفاصيل الطلب للمندوبة (جديد) */}
+      <Dialog open={!!selectedOrder} onOpenChange={() => setSelectedOrder(null)}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>
-              {selectedProduct ? "تعديل المنتج" : "إضافة منتج جديد"}
+            <DialogTitle className="flex justify-between items-center border-b pb-2">
+              <span>تفاصيل الطلب #{selectedOrder?.id.slice(-8)}</span>
+              {getStatusBadge(selectedOrder?.status || "")}
             </DialogTitle>
+            {/* السطر الجديد المضاف أدناه */}
+            <DialogDescription className="sr-only">
+               عرض تفاصيل المنتجات وبيانات العميل للطلب المختار.
+             </DialogDescription>
           </DialogHeader>
-
-          <div className="space-y-4 mt-4">
-            {/* Image */}
-            <div className="space-y-2">
-              <Label>صورة المنتج *</Label>
-              <div className="flex gap-2">
-                <Input
-                  placeholder="رابط الصورة أو ارفع صورة"
-                  value={productForm.mainImage}
-                  onChange={(e) => setProductForm({ ...productForm, mainImage: e.target.value })}
-                  className="flex-1"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={async () => {
-                    const input = document.createElement("input");
-                    input.type = "file";
-                    input.accept = "image/*";
-                    input.onchange = async (e) => {
-                      const file = (e.target as HTMLInputElement).files?.[0];
-                      if (file) {
-                        // Upload to cloud
-                        const result = await uploadImage(file);
-                        if (result.success && result.url) {
-                          setProductForm({ ...productForm, mainImage: result.url });
-                          toast({ title: "تم رفع الصورة", description: "تم حفظ الصورة في السحابة" });
-                        } else {
-                          toast({ title: "خطأ", description: result.error || "فشل رفع الصورة", variant: "destructive" });
-                        }
-                      }
-                    };
-                    input.click();
-                  }}
-                >
-                  <Upload className="h-4 w-4 ml-1" />
-                  رفع
-                </Button>
-              </div>
-              {productForm.mainImage && (
-                <div className="w-32 h-32 rounded-lg overflow-hidden border">
-                  <img src={productForm.mainImage} alt="Preview" className="w-full h-full object-cover" />
+          
+          {selectedOrder && (
+            <div className="space-y-5 text-sm text-gray-800 mt-2">
+              
+              {/* بيانات العميل والموقع */}
+              <div className="space-y-2">
+                <p className="font-bold text-lg text-[var(--gold-dark)]">👤 بيانات التوصيل:</p>
+                <div className="pr-2 space-y-1 bg-gray-50 p-3 rounded-lg border border-gray-100">
+                  {(() => {
+                    let extraData: any = {};
+                    try {
+                      extraData = typeof selectedOrder.paymentDetails === 'string' 
+                        ? JSON.parse(selectedOrder.paymentDetails) 
+                        : (selectedOrder.paymentDetails || {});
+                    } catch (e) {}
+                    return (
+                      <>
+                        <p>• <span className="font-medium text-gray-700">العميل:</span> {selectedOrder.customer.name}</p>
+                        {extraData.customerName && extraData.customerName !== selectedOrder.customer.name && (
+                            <p className="text-blue-700 font-bold bg-blue-50 p-1.5 rounded mt-1 w-fit border border-blue-100">
+                                🎁 المستلم: {extraData.customerName}
+                            </p>
+                        )}
+                        <p>• <span className="font-medium">الجوال:</span> <span dir="ltr">{selectedOrder.phone || selectedOrder.customer.phone}</span></p>
+                        <p>• <span className="font-medium">المحافظة:</span> {selectedOrder.governorate}</p>
+                        <p>• <span className="font-medium">العنوان:</span> {selectedOrder.address}</p>
+                        <p className="mt-2 pt-2 border-t border-gray-200">
+                            📍 <span className="font-medium">الموقع:</span> {extraData.locationLink ? <a href={extraData.locationLink} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline font-bold hover:text-blue-800">فتح الخريطة (Google Maps)</a> : <span className="text-gray-400">لم يرفق</span>}
+                        </p>
+                      </>
+                    );
+                  })()}
                 </div>
-              )}
-            </div>
-
-            {/* Names */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>الاسم بالعربي *</Label>
-                <Input
-                  placeholder="عطر فاخر"
-                  value={productForm.nameAr}
-                  onChange={(e) => setProductForm({ ...productForm, nameAr: e.target.value })}
-                />
               </div>
-              <div className="space-y-2">
-                <Label>الاسم بالإنجليزي *</Label>
-                <Input
-                  placeholder="Luxury Perfume"
-                  value={productForm.name}
-                  onChange={(e) => setProductForm({ ...productForm, name: e.target.value })}
-                />
-              </div>
-            </div>
 
-            {/* Category */}
-            <div className="space-y-2">
-              <Label>التصنيف</Label>
-              <Select
-                value={productForm.categoryId}
-                onValueChange={(value) => setProductForm({ ...productForm, categoryId: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="اختر التصنيف" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.map((cat) => (
-                    <SelectItem key={cat.id} value={cat.id}>
-                      {cat.nameAr}
-                    </SelectItem>
+              {/* المنتجات المطلوبة */}
+              <div className="space-y-2">
+                <p className="font-bold text-lg text-[var(--gold-dark)]">📦 المنتجات:</p>
+                <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                  {selectedOrder.items.map((item, index) => (
+                    <div key={index} className="flex items-start gap-3 p-2 bg-white rounded-lg border border-gray-100 shadow-sm">
+                      <div className="w-14 h-14 rounded-md overflow-hidden bg-gray-100 shrink-0">
+                        {item.product?.mainImage ? (
+                          <img src={item.product.mainImage} alt="product" className="w-full h-full object-cover" />
+                        ) : (
+                          <Package className="h-6 w-6 text-gray-300 m-auto mt-4" />
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-bold text-sm">{item.product?.nameAr || "منتج غير متاح"}</p>
+                        <div className="text-xs text-gray-600 mt-1 space-y-1">
+                            <p>🔹 العدد: {item.quantity} | السعر: {formatCurrency(item.price)}</p>
+                            {item.color && <p className="text-xs text-purple-600 font-bold mt-1">🎨 اللون: {item.color}</p>}
+                        </div>
+                      </div>
+                      <div className="text-left pr-2 flex items-center">
+                          <p className="font-bold text-sm text-[var(--gold-dark)]">
+                              {formatCurrency(item.price * item.quantity)}
+                          </p>
+                      </div>
+                    </div>
                   ))}
-                </SelectContent>
-              </Select>
-            </div>
+                </div>
+              </div>
 
-            {/* Prices */}
-            <div className="grid grid-cols-2 gap-4">
+              {/* بيانات الدفع والملاحظات (النسخة الكاملة مع الإغلاق) */}
               <div className="space-y-2">
-                <Label>السعر (ر.ي) *</Label>
-                <Input
-                  type="number"
-                  placeholder="45000"
-                  value={productForm.price}
-                  onChange={(e) => setProductForm({ ...productForm, price: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>السعر الأصلي (ر.ي)</Label>
-                <Input
-                  type="number"
-                  placeholder="55000"
-                  value={productForm.originalPrice}
-                  onChange={(e) => setProductForm({ ...productForm, originalPrice: e.target.value })}
-                />
-              </div>
-            </div>
+                <p className="font-bold text-lg text-[var(--gold-dark)]">💳 الدفع والملاحظات:</p>
+                <div className="pr-2 bg-blue-50 p-3 rounded-lg border border-blue-100 space-y-3">
+                  
+                  {/* إجمالي قيمة الطلب */}
+                  <div className="flex justify-between items-center border-b border-blue-200 pb-2">
+                      <span className="font-medium text-blue-900">إجمالي قيمة الطلب:</span>
+                      <span className="font-bold text-lg text-[var(--gold-dark)]">
+                        {formatCurrency(selectedOrder.totalAmount)}
+                      </span>
+                  </div>
 
-            {/* Stock */}
-            <div className="space-y-2">
-              <Label>المخزون</Label>
-              <Input
-                type="number"
-                placeholder="10"
-                value={productForm.stock}
-                onChange={(e) => setProductForm({ ...productForm, stock: e.target.value })}
-              />
-            </div>
+                  {/* المبلغ المطلوب تحصيله */}
+                  <div className="bg-white/50 p-2 rounded-md border border-blue-100">
+                    <p>
+                      🔹 <span className="font-medium text-gray-700">المطلوب تحصيله من العميل:</span>{" "}
+                      <span className="font-bold text-red-600">
+                        {(selectedOrder.paymentMethod === 'transfer' || selectedOrder.paymentMethod === 'wallet') 
+                          ? '0 ر.ي (مدفوع مسبقاً)' 
+                          : formatCurrency(selectedOrder.totalAmount)}
+                      </span>
+                    </p>
+                  </div>
+                  
+                  {/* زر عرض إثبات الدفع */}
+                  {(() => {
+                    let pData: any = {};
+                    try {
+                        pData = typeof selectedOrder.paymentDetails === 'string' 
+                            ? JSON.parse(selectedOrder.paymentDetails) 
+                            : (selectedOrder.paymentDetails || {});
+                    } catch (e) {}
+                    
+                    if (pData.proofImage) {
+                        return (
+                            <div className="pt-1">
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  className="w-full bg-white border-blue-300 text-blue-700 hover:bg-blue-50" 
+                                  onClick={() => window.open(pData.proofImage, '_blank')}
+                                >
+                                    <Eye className="h-4 w-4 ml-2" />
+                                    فتح صورة إثبات الدفع من السحابة
+                                </Button>
+                            </div>
+                        );
+                    }
+                    return null;
+                  })()}
 
-            {/* Description */}
-            <div className="space-y-2">
-              <Label>الوصف</Label>
-              <Textarea
-                placeholder="وصف المنتج..."
-                value={productForm.descriptionAr}
-                onChange={(e) => setProductForm({ ...productForm, descriptionAr: e.target.value })}
-                rows={3}
-              />
-            </div>
-
-            {/* Toggles */}
-            <div className="flex gap-6">
-              <div className="flex items-center gap-2">
-                <Switch
-                  checked={productForm.isActive}
-                  onCheckedChange={(checked) => setProductForm({ ...productForm, isActive: checked })}
-                />
-                <Label>نشط</Label>
+                  {/* الملاحظات */}
+                  <div className="pt-2 border-t border-blue-200">
+                      <p className="text-gray-700">
+                        📝 <span className="font-medium">ملاحظات العميل:</span>{" "}
+                        <span className="italic">{(selectedOrder as any).notes || 'لا يوجد'}</span>
+                      </p>
+                  </div>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <Switch
-                  checked={productForm.isFeatured}
-                  onCheckedChange={(checked) => setProductForm({ ...productForm, isFeatured: checked })}
-                />
-                <Label>مميز</Label>
-              </div>
-            </div>
 
-            {/* Actions */}
-            <div className="flex gap-3 pt-4">
-              <Button
-                onClick={handleSaveProduct}
-                disabled={isSaving}
-                className="flex-1 bg-[var(--gold)] hover:bg-[var(--gold-dark)]"
-              >
-                {isSaving ? (
-                  <RefreshCw className="h-4 w-4 animate-spin" />
-                ) : (
-                  <>
-                    <Save className="h-4 w-4 ml-2" />
-                    حفظ
-                  </>
-                )}
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => setIsProductDialogOpen(false)}
-                className="flex-1"
-              >
-                إلغاء
-              </Button>
-            </div>
-          </div>
+            </div> // إغلاق الـ div الأساسي للبيانات
+          )} 
         </DialogContent>
       </Dialog>
+      {/* Product Form Dialog (النافذة الجديدة المستقلة) */}
+      <ProductFormDialog
+          isOpen={isProductDialogOpen}
+          onClose={() => {
+              setIsProductDialogOpen(false);
+              setSelectedProduct(null);
+          }}
+          categories={categories}
+          selectedProduct={selectedProduct}
+          userId={user.id}
+          isSaving={isSaving}
+          onSave={handleSaveProduct}
+      />
 
       {/* Chat Widget */}
       <ChatWidget
@@ -881,6 +1094,62 @@ export function AgentDashboard({ user, onLogout, onViewStore }: AgentDashboardPr
         userName={user.name}
         userRole={user.role}
       />
+
+      {/* Delivery Fees Dialog (نافذة رسوم التوصيل للمندوبة) */}
+      <Dialog open={isDeliveryDialogOpen} onOpenChange={setIsDeliveryDialogOpen}>
+          <DialogContent className="max-w-md max-h-[85vh] overflow-hidden flex flex-col rounded-2xl">
+             <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-purple-700 font-bold text-xl">
+                <MapPin className="h-6 w-6" />
+                دليل رسوم التوصيل
+              </DialogTitle>
+              {/* تم استبدال وسم الـ p بوسم DialogDescription لحل مشكلة التحذير */}
+              <DialogDescription className="text-sm text-[var(--muted-foreground)]">
+                تسعيرة الشحن المعتمدة لكل محافظة لتوضيحها لعملائك.
+              </DialogDescription>
+             </DialogHeader>
+
+              <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar mt-2 pb-2">
+                  {isLoadingDelivery ? (
+                      <div className="flex flex-col items-center justify-center py-16 gap-3 text-purple-500">
+                          <RefreshCw className="h-8 w-8 animate-spin" />
+                          <p className="text-sm font-medium">جاري تحميل التسعيرة...</p>
+                      </div>
+                  ) : governorates.length === 0 ? (
+                      <div className="text-center py-10 text-gray-500 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                          <MapPin className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                          <p>لم تقم الإدارة بتحديد رسوم التوصيل بعد.</p>
+                      </div>
+                  ) : (
+                      <div className="space-y-3">
+                          {governorates.map((gov, index) => (
+                              <div key={gov.id || index} className="flex items-center justify-between p-3.5 bg-white border border-gray-100 rounded-xl shadow-sm hover:border-purple-300 hover:shadow-md transition-all">
+                                  <div className="flex items-center gap-3">
+                                      <div className="h-10 w-10 rounded-full bg-purple-50 text-purple-600 flex items-center justify-center font-bold text-lg border border-purple-100">
+                                          {gov.nameAr.charAt(0)}
+                                      </div>
+                                      <span className="font-bold text-gray-800">{gov.nameAr}</span>
+                                  </div>
+                                  <div className="bg-green-50 px-4 py-2 rounded-lg border border-green-100">
+                                      <span className="font-bold text-green-700 text-sm">
+                                          {gov.deliveryFee === 0 ? "توصيل مجاني" : `${gov.deliveryFee.toLocaleString("ar-YE")} ر.ي`}
+                                      </span>
+                                  </div>
+                              </div>
+                          ))}
+                      </div>
+                  )}
+              </div>
+              <div className="pt-4 border-t mt-auto">
+                  <Button 
+                      className="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold rounded-xl" 
+                      onClick={() => setIsDeliveryDialogOpen(false)}
+                  >
+                      إغلاق
+                  </Button>
+              </div>
+          </DialogContent>
+      </Dialog>
     </div>
   );
 }

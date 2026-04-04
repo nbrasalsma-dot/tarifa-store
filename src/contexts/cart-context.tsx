@@ -19,6 +19,7 @@ export interface CartItem {
   image: string;
   quantity: number;
   stock: number;
+  color?: string | null; // أضف هذا السطر هنا
 }
 
 export interface Cart {
@@ -80,8 +81,9 @@ function cartReducer(state: CartState, action: CartAction): CartState {
     }
 
     case "ADD_ITEM": {
+      // تعديل هذا السطر ليبحث عن المنتج واللون معاً
       const existingIndex = state.cart.items.findIndex(
-        (item) => item.productId === action.payload.productId
+        (item) => item.productId === action.payload.productId && item.color === action.payload.color
       );
 
       let newItems: CartItem[];
@@ -165,16 +167,17 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 
 
 function encryptData(data: string): string {
-    const key = "tarifa-cart-secret-2024";
-    let result = "";
-
-    
-    const encodedData = unescape(encodeURIComponent(data));
-
-    for (let i = 0; i < encodedData.length; i++) {
-        result += String.fromCharCode(encodedData.charCodeAt(i) ^ key.charCodeAt(i % key.length));
+    try {
+        const key = "tarifa-cart-secret-2024";
+        let result = "";
+        const encodedData = encodeURIComponent(data);
+        for (let i = 0; i < encodedData.length; i++) {
+            result += String.fromCharCode(encodedData.charCodeAt(i) ^ key.charCodeAt(i % key.length));
+        }
+        return btoa(result);
+    } catch {
+        return "";
     }
-    return btoa(result);
 }
 
 function decryptData(encrypted: string): string {
@@ -185,8 +188,7 @@ function decryptData(encrypted: string): string {
         for (let i = 0; i < data.length; i++) {
             result += String.fromCharCode(data.charCodeAt(i) ^ key.charCodeAt(i % key.length));
         }
-
-        return decodeURIComponent(escape(result));
+        return decodeURIComponent(result);
     } catch {
         return "";
     }

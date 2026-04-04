@@ -1,14 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { z } from "zod";
+import { pusherServer } from "@/lib/pusher";
+import { sendNotificationToAdmins, sendNotificationToUser } from "@/lib/notifications";
 
 // Validation schemas
 const createOrderSchema = z.object({
   customerId: z.string().min(1, "معرف العميل مطلوب"),
+  customerName: z.string().optional(),
+  locationLink: z.string().optional(),
   items: z.array(z.object({
     productId: z.string(),
     quantity: z.number().min(1).max(100),
     price: z.number().min(0),
+    color: z.string().nullable().optional(),
   })).min(1, "يجب إضافة منتج واحد على الأقل"),
   notes: z.string().max(500).optional(),
   address: z.string().min(2, "العنوان قصير جداً").max(200),
@@ -27,6 +32,7 @@ const updateOrderSchema = z.object({
   orderId: z.string(),
   status: z.enum(["PENDING", "PROCESSING", "SHIPPED", "DELIVERED", "COMPLETED", "CANCELLED"]).optional(),
   agentId: z.string().optional(),
+  paymentDetails: z.any().optional(),
 });
 
 // Get all orders
@@ -71,6 +77,13 @@ export async function GET(request: NextRequest) {
                 nameAr: true,
                 mainImage: true,
                 price: true,
+                sku: true, // 👈 تم إضافة جلب كود المنتج
+                merchant: {
+                  select: { storeName: true } // 👈 تم إضافة جلب اسم متجر التاجر
+                },
+                agent: {
+                  select: { name: true } // 👈 تم إضافة جلب اسم المندوب
+                }
               },
             },
           },
@@ -144,8 +157,16 @@ export async function POST(request: NextRequest) {
         productId: item.productId,
         quantity: item.quantity,
         price: product.price,
+        color: item.color,
       });
     }
+
+    // تجميع بيانات المستلم والموقع داخل حقل الدفع
+    const enrichedPaymentDetails = {
+      ...(validatedData.paymentDetails || {}),
+      customerName: validatedData.customerName,
+      locationLink: validatedData.locationLink
+    };
 
     // Create order with transaction
     const order = await db.$transaction(async (tx) => {
@@ -159,7 +180,7 @@ export async function POST(request: NextRequest) {
           phone: validatedData.phone,
           governorate: validatedData.governorate,
           paymentMethod: validatedData.paymentMethod || null,
-          paymentDetails: validatedData.paymentDetails ? JSON.stringify(validatedData.paymentDetails) : null,
+          paymentDetails: JSON.stringify(enrichedPaymentDetails),
           items: {
             create: orderItems,
           },
@@ -198,9 +219,25 @@ export async function POST(request: NextRequest) {
       timeout: 20000,
     });
 
-
-    // Log security event
+// Log security event
     console.log(`[ORDER] Created: ${order.id} by customer: ${validatedData.customerId} - Total: ${totalAmount}`);
+      
+    // 1. إشعار لكل المدراء بوجود طلب جديد
+    await sendNotificationToAdmins({
+      type: "ORDER_NEW",
+      title: "طلب جديد! 🛍️",
+      message: `تم استلام طلب جديد بقيمة ${totalAmount.toLocaleString()} ر.ي من العميل: ${customer.name}`,
+      data: { orderId: order.id }
+    });
+
+    // 2. إشعار للعميل لتأكيد استلام الطلب
+    await sendNotificationToUser({
+      userId: customer.id,
+      type: "ORDER_NEW",
+      title: "تم استلام طلبك بنجاح 🎉",
+      message: `رقم طلبك هو #${order.id.slice(-8)}. جاري مراجعته وتجهيزه، شكراً لتسوقك من تَرِفَة.`,
+      data: { orderId: order.id }
+    });
 
     return NextResponse.json({ 
       success: true, 
@@ -222,44 +259,108 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// Update order status
+// Update order status & Claiming Logic with Advanced Notifications
 export async function PUT(request: NextRequest) {
-  try {
-    const body = await request.json();
-    const validatedData = updateOrderSchema.parse(body);
+    try {
+        const body = await request.json();
+        const validatedData = updateOrderSchema.parse(body);
 
-    const order = await db.order.update({
-      where: { id: validatedData.orderId },
-      data: {
-        status: validatedData.status,
-        agentId: validatedData.agentId,
-      },
-      include: {
-        customer: {
-          select: { id: true, name: true, email: true },
-        },
-      },
-    });
+        const updateData: any = {};
+        if (validatedData.status) updateData.status = validatedData.status;
+        if (validatedData.agentId) updateData.agentId = validatedData.agentId;
+        if (validatedData.paymentDetails) {
+            updateData.paymentDetails = JSON.stringify(validatedData.paymentDetails);
+        }
 
-    // Log security event
-    console.log(`[ORDER] Updated: ${validatedData.orderId} - Status: ${validatedData.status}`);
+        // تحديث الطلب وجلب كافة البيانات المتعلقة بالمنتجات والتجار والمندوبين
+        const order = await db.order.update({
+            where: { id: validatedData.orderId },
+            data: updateData,
+            include: {
+                customer: true,
+                agent: true,
+                items: {
+                    include: {
+                        product: {
+                            include: {
+                                merchant: { include: { user: true } },
+                                agent: true, // المندوب الذي أضاف المنتج
+                            }
+                        }
+                    }
+                }
+            },
+        });
 
-    return NextResponse.json({ 
-      success: true, 
-      order,
-      message: "تم تحديث الطلب"
-    });
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: error.errors[0].message },
-        { status: 400 }
-      );
+        const orderCode = order.id.slice(-8);
+        const orderDetails = `📦 طلب #${orderCode}\n💰 المبلغ: ${order.totalAmount} ر.ي\n📍 العنوان: ${order.governorate} - ${order.address}\n📞 هاتف: ${order.phone}`;
+        const statusAr = {
+            PENDING: "قيد الانتظار",
+            PROCESSING: "قيد التجهيز",
+            SHIPPED: "تم الشحن",
+            DELIVERED: "تم التسليم",
+            COMPLETED: "منجز",
+            CANCELLED: "ملغي"
+        }[order.status] || order.status;
+
+        // --- 1. إشعار للإدارة (تفصيلي جداً) ---
+        await sendNotificationToAdmins({
+            type: "ORDER_CLAIMED",
+            title: "تحديث حالة طلبية 📢",
+            message: `قام المندوب [${order.agent?.name || "الإدارة"}] بتغيير حالة الطلبية #${orderCode} إلى (${statusAr}).\n${orderDetails}`,
+            data: { orderId: order.id }
+        });
+
+        // --- 2. إشعارات لأصحاب المنتجات (تجار أو مناديب) ---
+        const ownersNotified = new Set(); // لمنع تكرار الإشعار لنفس الشخص في نفس الطلب
+
+        for (const item of order.items) {
+            const product = item.product;
+            const owner = product.merchant?.user || product.agent; // التاجر أو المندوب صاحب المنتج
+
+            if (owner && !ownersNotified.has(owner.id)) {
+                await sendNotificationToUser({
+                    userId: owner.id,
+                    type: "ORDER_CLAIMED",
+                    title: "تحديث على منتجاتك 🔔",
+                    message: `قام [${order.agent?.name || "الإدارة"}] باستلام/تحديث طلبيتك #${orderCode}.\nالحالة: ${statusAr}\nالمنتج: ${product.nameAr}\n${orderDetails}`,
+                    data: { orderId: order.id }
+                });
+                ownersNotified.add(owner.id);
+            }
+        }
+
+        // --- 3. إشعار للعميل (الشفافية والدردشة) ---
+        if (validatedData.status === "PROCESSING") {
+            const claimerName = order.agent?.name || "الإدارة";
+            await sendNotificationToUser({
+                userId: order.customerId,
+                type: "ORDER_CONFIRMED",
+                title: "بدأ تجهيز طلبك 🚀",
+                message: `المندوب [${claimerName}] استلم طلبك #${orderCode} وهو الآن قيد التجهيز.\nيمكنك التواصل معه مباشرة عبر الدردشة للاستفسار.`,
+                data: { orderId: order.id, agentId: order.agentId }
+            });
+        } else if (validatedData.status) {
+            // إشعارات الحالات الأخرى للعميل
+            const messages: any = {
+                SHIPPED: "طلبك في الطريق إليك الآن! 🚚",
+                DELIVERED: "تم تسليم الطلب بنجاح. نتمنى أن ينال إعجابك! ✅",
+                CANCELLED: "عذراً، تم إلغاء طلبك. يرجى مراجعة الإدارة. ⚠️"
+            };
+            if (messages[validatedData.status]) {
+                await sendNotificationToUser({
+                    userId: order.customerId,
+                    type: "ORDER_NEW",
+                    title: "تحديث حالة الطلب",
+                    message: `${messages[validatedData.status]}\nكود الطلب: #${orderCode}`,
+                    data: { orderId: order.id }
+                });
+            }
+        }
+
+        return NextResponse.json({ success: true, order, message: "تم تحديث الطلب وإرسال الإشعارات" });
+    } catch (error) {
+        console.error("Update order error:", error);
+        return NextResponse.json({ error: "حدث خطأ أثناء تحديث الطلب" }, { status: 500 });
     }
-    console.error("Update order error:", error);
-    return NextResponse.json(
-      { error: "حدث خطأ أثناء تحديث الطلب" },
-      { status: 500 }
-    );
-  }
 }

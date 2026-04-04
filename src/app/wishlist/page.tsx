@@ -191,13 +191,13 @@ export default function WishlistPage() {
                     قائمة الأمنيات فارغة
                   </h3>
                   <p className="text-[#8B7355] mb-6">
-                    ابدئي بإضافة المنتجات التي تعجبك لسهولة الوصول إليها لاحقاً
+                    ابدئ بإضافة المنتجات التي تعجبك لسهولة الوصول إليها لاحقاً
                   </p>
                   <Button
                     className="bg-gradient-to-r from-[#C9A962] to-[#B8956E] hover:from-[#B8956E] hover:to-[#9A7B4F] text-white gap-2"
                     onClick={() => window.location.href = "/products"}
                   >
-                    تصفحي المنتجات
+                    تصفح المنتجات
                     <ArrowRight className="h-4 w-4" />
                   </Button>
                 </div>
@@ -319,7 +319,7 @@ export default function WishlistPage() {
                   className="border-2 border-[#C9A962] text-[#8B7355] hover:bg-[#C9A962] hover:text-white px-8 py-6 rounded-full gap-2"
                   onClick={() => window.location.href = "/products"}
                 >
-                  تصفحي المزيد من المنتجات
+                  تصفح المزيد من المنتجات
                   <ArrowRight className="h-5 w-5" />
                 </Button>
               </div>
