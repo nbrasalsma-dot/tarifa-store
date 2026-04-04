@@ -201,6 +201,13 @@ export default function proxy(request: NextRequest) {
   if (pathname === '/api/admin/create-manual-user') {
     return NextResponse.next(); 
   }
+    if (pathname === '/api/auth/google/callback' && request.method === 'GET') {
+        const hasCode = request.nextUrl.searchParams.has('code');
+        const hasError = request.nextUrl.searchParams.has('error');
+        if (hasCode || hasError) {
+            return NextResponse.next();
+        }
+    }
   
   // Check if IP is blocked
   if (blockedIPs.has(ip)) {
