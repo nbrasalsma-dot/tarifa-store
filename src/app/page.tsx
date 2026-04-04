@@ -28,7 +28,7 @@ import {
     Shield,
     ArrowLeft,
 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -372,542 +372,544 @@ export default function HomePage() {
     }
 
     return (
-        <div className="min-h-screen flex flex-col bg-gradient-to-br from-[#FAF7F2] to-[#F5EFE6]">
-            {/* Navbar */}
-            <Navbar
-                user={user}
-                onOpenCart={() => setIsCartOpen(true)}
-                onOpenAuth={() => setIsAuthOpen(true)}
-                onLogout={handleLogout}
-                onViewDashboard={() => setViewMode('dashboard')}
-                onViewStore={() => setViewMode('store')}
-                viewMode={viewMode}
-            />
+        <Suspense fallback={<div className="min-h-screen flex items-center justify-center">جاري التحميل...</div>}>
+            <div className="min-h-screen flex flex-col bg-gradient-to-br from-[#FAF7F2] to-[#F5EFE6]">
+                {/* Navbar */}
+                <Navbar
+                    user={user}
+                    onOpenCart={() => setIsCartOpen(true)}
+                    onOpenAuth={() => setIsAuthOpen(true)}
+                    onLogout={handleLogout}
+                    onViewDashboard={() => setViewMode('dashboard')}
+                    onViewStore={() => setViewMode('store')}
+                    viewMode={viewMode}
+                />
 
-            {/* Auth Modals */}
-            <AuthModals isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} defaultTab={authTab} />
+                {/* Auth Modals */}
+                <AuthModals isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} defaultTab={authTab} />
 
-            {/* Cart Panel */}
-            <CartPanel
-                isOpen={isCartOpen}
-                onClose={() => setIsCartOpen(false)}
-                user={user}
-                onCheckout={() => {
-                    if (!user) {
-                        setIsCartOpen(false);
-                        setIsAuthOpen(true);
-                        setAuthTab("login");
-                    } else {
-                        setIsCartOpen(false);
-                        setIsCheckoutOpen(true);
-                    }
-                }}
-            />
+                {/* Cart Panel */}
+                <CartPanel
+                    isOpen={isCartOpen}
+                    onClose={() => setIsCartOpen(false)}
+                    user={user}
+                    onCheckout={() => {
+                        if (!user) {
+                            setIsCartOpen(false);
+                            setIsAuthOpen(true);
+                            setAuthTab("login");
+                        } else {
+                            setIsCartOpen(false);
+                            setIsCheckoutOpen(true);
+                        }
+                    }}
+                />
 
-            {/* Checkout Dialog */}
-            <CheckoutDialog
-                isOpen={isCheckoutOpen}
-                onClose={() => setIsCheckoutOpen(false)}
-                items={cartState.cart.items}
-                userId={user?.id || ""}
-                onSuccess={(orderId) => {
-                    setLastOrderId(orderId);
-                    clearCart();
-                }}
-            />
+                {/* Checkout Dialog */}
+                <CheckoutDialog
+                    isOpen={isCheckoutOpen}
+                    onClose={() => setIsCheckoutOpen(false)}
+                    items={cartState.cart.items}
+                    userId={user?.id || ""}
+                    onSuccess={(orderId) => {
+                        setLastOrderId(orderId);
+                        clearCart();
+                    }}
+                />
 
-            {/* Main Content */}
-            <main className="flex-1 pt-16 md:pt-20">
-                {/* Hero Section */}
-                <section className="relative h-[90vh] md:h-screen overflow-hidden">
-                    <AnimatePresence mode="wait">
-                        <motion.div
-                            key={currentSlide}
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            transition={{ duration: 0.8 }}
-                            className="absolute inset-0"
-                        >
-                            <div
-                                className="absolute inset-0 bg-cover bg-center"
-                                style={{ backgroundImage: `url(${heroSlides[currentSlide].image})` }}
+                {/* Main Content */}
+                <main className="flex-1 pt-16 md:pt-20">
+                    {/* Hero Section */}
+                    <section className="relative h-[90vh] md:h-screen overflow-hidden">
+                        <AnimatePresence mode="wait">
+                            <motion.div
+                                key={currentSlide}
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                transition={{ duration: 0.8 }}
+                                className="absolute inset-0"
                             >
-                                <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/30 to-black/60" />
-                            </div>
-
-                            <div className="relative h-full flex items-center justify-center text-center text-white px-4">
-                                <motion.div
-                                    initial={{ opacity: 0, y: 40 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: 0.3, duration: 0.8 }}
-                                    className="max-w-4xl"
+                                <div
+                                    className="absolute inset-0 bg-cover bg-center"
+                                    style={{ backgroundImage: `url(${heroSlides[currentSlide].image})` }}
                                 >
+                                    <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/30 to-black/60" />
+                                </div>
+
+                                <div className="relative h-full flex items-center justify-center text-center text-white px-4">
                                     <motion.div
-                                        initial={{ scale: 0 }}
-                                        animate={{ scale: 1 }}
-                                        transition={{ delay: 0.5, type: "spring" }}
-                                        className="inline-block mb-4"
-                                    >
-                                        <Sparkles className="h-8 w-8 text-[#C9A962]" />
-                                    </motion.div>
-
-                                    <motion.p
-                                        className="text-[#C9A962] text-xl md:text-3xl mb-3 font-light tracking-widest"
-                                        initial={{ opacity: 0, y: 20 }}
+                                        initial={{ opacity: 0, y: 40 }}
                                         animate={{ opacity: 1, y: 0 }}
-                                        transition={{ delay: 0.6 }}
+                                        transition={{ delay: 0.3, duration: 0.8 }}
+                                        className="max-w-4xl"
                                     >
-                                        {heroSlides[currentSlide].subtitle}
-                                    </motion.p>
+                                        <motion.div
+                                            initial={{ scale: 0 }}
+                                            animate={{ scale: 1 }}
+                                            transition={{ delay: 0.5, type: "spring" }}
+                                            className="inline-block mb-4"
+                                        >
+                                            <Sparkles className="h-8 w-8 text-[#C9A962]" />
+                                        </motion.div>
 
-                                    <motion.h1
-                                        className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 leading-tight"
-                                        initial={{ opacity: 0, y: 20 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        transition={{ delay: 0.8 }}
-                                    >
-                                        {heroSlides[currentSlide].title}
-                                    </motion.h1>
+                                        <motion.p
+                                            className="text-[#C9A962] text-xl md:text-3xl mb-3 font-light tracking-widest"
+                                            initial={{ opacity: 0, y: 20 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ delay: 0.6 }}
+                                        >
+                                            {heroSlides[currentSlide].subtitle}
+                                        </motion.p>
 
-                                    <motion.p
-                                        className="text-lg md:text-xl text-gray-200 mb-10 max-w-2xl mx-auto"
-                                        initial={{ opacity: 0, y: 20 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        transition={{ delay: 1 }}
-                                    >
-                                        {heroSlides[currentSlide].description}
-                                    </motion.p>
+                                        <motion.h1
+                                            className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 leading-tight"
+                                            initial={{ opacity: 0, y: 20 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ delay: 0.8 }}
+                                        >
+                                            {heroSlides[currentSlide].title}
+                                        </motion.h1>
 
-                                    <motion.div
-                                        initial={{ opacity: 0, y: 20 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        transition={{ delay: 1.2 }}
-                                        className="flex flex-col sm:flex-row gap-4 justify-center"
-                                    >
-                                        <Link href={heroSlides[currentSlide].link || "/products"}>
+                                        <motion.p
+                                            className="text-lg md:text-xl text-gray-200 mb-10 max-w-2xl mx-auto"
+                                            initial={{ opacity: 0, y: 20 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ delay: 1 }}
+                                        >
+                                            {heroSlides[currentSlide].description}
+                                        </motion.p>
+
+                                        <motion.div
+                                            initial={{ opacity: 0, y: 20 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ delay: 1.2 }}
+                                            className="flex flex-col sm:flex-row gap-4 justify-center"
+                                        >
+                                            <Link href={heroSlides[currentSlide].link || "/products"}>
+                                                <Button
+                                                    size="lg"
+                                                    className="bg-gradient-to-r from-[#C9A962] to-[#B8956E] hover:from-[#B8956E] hover:to-[#9A7B4F] text-white px-10 py-7 text-lg rounded-full shadow-2xl hover:shadow-[#C9A962]/30 transition-all duration-300 group"
+                                                >
+                                                    {heroSlides[currentSlide].cta}
+                                                    <ArrowLeft className="mr-2 h-5 w-5 group-hover:-translate-x-1 transition-transform" />
+                                                </Button>
+                                            </Link>
                                             <Button
                                                 size="lg"
-                                                className="bg-gradient-to-r from-[#C9A962] to-[#B8956E] hover:from-[#B8956E] hover:to-[#9A7B4F] text-white px-10 py-7 text-lg rounded-full shadow-2xl hover:shadow-[#C9A962]/30 transition-all duration-300 group"
+                                                variant="outline"
+                                                className="border-2 border-white/30 bg-white/10 backdrop-blur-sm text-white hover:bg-white hover:text-[#8B7355] px-8 py-7 text-lg rounded-full transition-all duration-300"
+                                                onClick={() => openWhatsApp()}
                                             >
-                                                {heroSlides[currentSlide].cta}
-                                                <ArrowLeft className="mr-2 h-5 w-5 group-hover:-translate-x-1 transition-transform" />
+                                                <MessageCircle className="h-5 w-5 ml-2" />
+                                                تواصل معنا
                                             </Button>
-                                        </Link>
-                                        <Button
-                                            size="lg"
-                                            variant="outline"
-                                            className="border-2 border-white/30 bg-white/10 backdrop-blur-sm text-white hover:bg-white hover:text-[#8B7355] px-8 py-7 text-lg rounded-full transition-all duration-300"
-                                            onClick={() => openWhatsApp()}
-                                        >
-                                            <MessageCircle className="h-5 w-5 ml-2" />
-                                            تواصل معنا
-                                        </Button>
+                                        </motion.div>
                                     </motion.div>
-                                </motion.div>
-                            </div>
+                                </div>
+                            </motion.div>
+                        </AnimatePresence>
+
+                        {/* Slide Navigation */}
+                        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-3">
+                            {heroSlides.map((_, index) => (
+                                <button
+                                    key={index}
+                                    onClick={() => setCurrentSlide(index)}
+                                    className={`h-2 rounded-full transition-all duration-500 ${index === currentSlide
+                                        ? "bg-[#C9A962] w-12"
+                                        : "bg-white/30 hover:bg-white/50 w-2"
+                                        }`}
+                                />
+                            ))}
+                        </div>
+
+                        {/* Arrow Navigation */}
+                        <button
+                            onClick={prevSlide}
+                            className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-[#C9A962]/80 backdrop-blur-sm p-4 rounded-full text-white transition-all duration-300 group"
+                        >
+                            <ChevronRight className="h-6 w-6 group-hover:scale-110 transition-transform" />
+                        </button>
+                        <button
+                            onClick={nextSlide}
+                            className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-[#C9A962]/80 backdrop-blur-sm p-4 rounded-full text-white transition-all duration-300 group"
+                        >
+                            <ChevronLeft className="h-6 w-6 group-hover:scale-110 transition-transform" />
+                        </button>
+
+                        {/* Scroll Indicator */}
+                        <motion.div
+                            animate={{ y: [0, 10, 0] }}
+                            transition={{ duration: 1.5, repeat: Infinity }}
+                            className="absolute bottom-20 left-1/2 -translate-x-1/2 text-white/50"
+                        >
+                            <ChevronLeft className="h-6 w-6 rotate-90" />
                         </motion.div>
-                    </AnimatePresence>
+                    </section>
+                    {/* Promotional Ads Section (الإعلانات الترويجية الديناميكية) */}
+                    {promoAds.length > 0 && (
+                        <section className="py-12 bg-white overflow-hidden">
+                            <div className="container mx-auto px-4">
+                                <div className="flex overflow-x-auto pb-6 gap-4 md:gap-6 snap-x custom-scrollbar">
+                                    {promoAds.map((ad, index) => (
+                                        <motion.div
+                                            key={ad.id}
+                                            initial={{ opacity: 0, x: 50 }}
+                                            whileInView={{ opacity: 1, x: 0 }}
+                                            viewport={{ once: true }}
+                                            transition={{ delay: index * 0.1 }}
+                                            className="min-w-[85vw] md:min-w-[400px] flex-shrink-0 snap-center cursor-pointer group"
+                                            onClick={() => ad.link && router.push(ad.link)}
+                                        >
+                                            <div className="relative aspect-[16/9] md:aspect-[21/9] rounded-2xl md:rounded-3xl overflow-hidden shadow-lg group-hover:shadow-2xl transition-all duration-500 border border-gray-100">
+                                                <img
+                                                    src={ad.image}
+                                                    alt={ad.titleAr}
+                                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                                                />
+                                                {/* الطبقة الظليلة */}
+                                                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent opacity-90" />
 
-                    {/* Slide Navigation */}
-                    <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-3">
-                        {heroSlides.map((_, index) => (
-                            <button
-                                key={index}
-                                onClick={() => setCurrentSlide(index)}
-                                className={`h-2 rounded-full transition-all duration-500 ${index === currentSlide
-                                    ? "bg-[#C9A962] w-12"
-                                    : "bg-white/30 hover:bg-white/50 w-2"
-                                    }`}
-                            />
-                        ))}
-                    </div>
-
-                    {/* Arrow Navigation */}
-                    <button
-                        onClick={prevSlide}
-                        className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-[#C9A962]/80 backdrop-blur-sm p-4 rounded-full text-white transition-all duration-300 group"
-                    >
-                        <ChevronRight className="h-6 w-6 group-hover:scale-110 transition-transform" />
-                    </button>
-                    <button
-                        onClick={nextSlide}
-                        className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-[#C9A962]/80 backdrop-blur-sm p-4 rounded-full text-white transition-all duration-300 group"
-                    >
-                        <ChevronLeft className="h-6 w-6 group-hover:scale-110 transition-transform" />
-                    </button>
-
-                    {/* Scroll Indicator */}
-                    <motion.div
-                        animate={{ y: [0, 10, 0] }}
-                        transition={{ duration: 1.5, repeat: Infinity }}
-                        className="absolute bottom-20 left-1/2 -translate-x-1/2 text-white/50"
-                    >
-                        <ChevronLeft className="h-6 w-6 rotate-90" />
-                    </motion.div>
-                </section>
-                {/* Promotional Ads Section (الإعلانات الترويجية الديناميكية) */}
-                {promoAds.length > 0 && (
-                    <section className="py-12 bg-white overflow-hidden">
-                        <div className="container mx-auto px-4">
-                            <div className="flex overflow-x-auto pb-6 gap-4 md:gap-6 snap-x custom-scrollbar">
-                                {promoAds.map((ad, index) => (
-                                    <motion.div
-                                        key={ad.id}
-                                        initial={{ opacity: 0, x: 50 }}
-                                        whileInView={{ opacity: 1, x: 0 }}
-                                        viewport={{ once: true }}
-                                        transition={{ delay: index * 0.1 }}
-                                        className="min-w-[85vw] md:min-w-[400px] flex-shrink-0 snap-center cursor-pointer group"
-                                        onClick={() => ad.link && router.push(ad.link)}
-                                    >
-                                        <div className="relative aspect-[16/9] md:aspect-[21/9] rounded-2xl md:rounded-3xl overflow-hidden shadow-lg group-hover:shadow-2xl transition-all duration-500 border border-gray-100">
-                                            <img
-                                                src={ad.image}
-                                                alt={ad.titleAr}
-                                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                                            />
-                                            {/* الطبقة الظليلة */}
-                                            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent opacity-90" />
-
-                                            {/* 💰 السعر: يظهر فوق على الزاوية */}
-                                            {ad.price && (
-                                                <div className="absolute top-4 right-4 bg-[var(--gold)] text-white px-3 py-1 rounded-full font-bold text-sm shadow-lg z-10">
-                                                    {ad.price.toLocaleString()} ر.ي
-                                                </div>
-                                            )}
-
-                                            {/* نصوص الإعلان والزر */}
-                                            <div className="absolute bottom-0 left-0 right-0 p-5 md:p-8 text-white transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
-                                                <h3 className="text-xl md:text-3xl font-bold mb-1 md:mb-2">{ad.titleAr}</h3>
-                                                {ad.descriptionAr && (
-                                                    <p className="text-sm md:text-lg text-white/80 line-clamp-1">{ad.descriptionAr}</p>
+                                                {/* 💰 السعر: يظهر فوق على الزاوية */}
+                                                {ad.price && (
+                                                    <div className="absolute top-4 right-4 bg-[var(--gold)] text-white px-3 py-1 rounded-full font-bold text-sm shadow-lg z-10">
+                                                        {ad.price.toLocaleString()} ر.ي
+                                                    </div>
                                                 )}
 
-                                                {/* الزر الذكي */}
-                                                <div className="mt-3 flex items-center gap-2 text-sm font-bold text-[var(--gold)] opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                                                    {ad.ctaAr || "اكتشف العرض"} <ArrowLeft className="h-4 w-4" />
+                                                {/* نصوص الإعلان والزر */}
+                                                <div className="absolute bottom-0 left-0 right-0 p-5 md:p-8 text-white transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
+                                                    <h3 className="text-xl md:text-3xl font-bold mb-1 md:mb-2">{ad.titleAr}</h3>
+                                                    {ad.descriptionAr && (
+                                                        <p className="text-sm md:text-lg text-white/80 line-clamp-1">{ad.descriptionAr}</p>
+                                                    )}
+
+                                                    {/* الزر الذكي */}
+                                                    <div className="mt-3 flex items-center gap-2 text-sm font-bold text-[var(--gold)] opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                                        {ad.ctaAr || "اكتشف العرض"} <ArrowLeft className="h-4 w-4" />
+                                                    </div>
                                                 </div>
                                             </div>
+                                        </motion.div>
+                                    ))}
+                                </div>
+                            </div>
+                        </section>
+                    )}
+                    {/* Categories Section */}
+                    <section className="py-20 md:py-28 bg-white">
+                        <div className="container mx-auto px-4">
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                viewport={{ once: true }}
+                                className="text-center mb-16"
+                            >
+                                <span className="text-[#C9A962] text-sm tracking-[0.3em] uppercase mb-4 block">استكشف</span>
+                                <h2 className="text-4xl md:text-5xl font-bold text-[#3D3021] mb-4">
+                                    تصفح الفئات
+                                </h2>
+                                <p className="text-[#8B7355] max-w-xl mx-auto text-lg">
+                                    اكتشف مجموعتنا المتنوعة من المنتجات الفاخرة المختارة بعناية
+                                </p>
+                            </motion.div>
+
+                            {categories.length > 0 ? (
+                                <motion.div
+                                    variants={staggerContainer}
+                                    initial="initial"
+                                    whileInView="animate"
+                                    viewport={{ once: true }}
+                                    className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8"
+                                >
+                                    {categories.map((category, index) => (
+                                        <Link key={category.id} href={`/products?category=${category.id}`}>
+                                            <motion.div
+                                                variants={fadeInUp}
+                                                whileHover={{ y: -10, scale: 1.02 }}
+                                                className="group relative aspect-[3/4] rounded-3xl overflow-hidden cursor-pointer shadow-xl hover:shadow-2xl transition-shadow duration-500"
+                                            >
+                                                <img
+                                                    src={category.image || `https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400`}
+                                                    alt={category.name}
+                                                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                                                />
+                                                <div className="absolute inset-0 bg-gradient-to-t from-[#3D3021]/90 via-[#3D3021]/30 to-transparent" />
+                                                <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
+                                                    <h3 className="text-xl md:text-2xl font-bold mb-1">{category.nameAr || category.name}</h3>
+                                                    <p className="text-white/70 text-sm flex items-center gap-1">
+                                                        <Sparkles className="h-3 w-3" />
+                                                        {category._count?.products || 0} منتج
+                                                    </p>
+                                                </div>
+                                                <div className="absolute inset-0 border-2 border-[#C9A962] opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-3xl" />
+                                            </motion.div>
+                                        </Link>
+                                    ))}
+                                </motion.div>
+                            ) : (
+                                <div className="text-center py-12">
+                                    <p className="text-[#8B7355]">لا توجد فئات حالياً</p>
+                                </div>
+                            )}
+                        </div>
+                    </section>
+
+                    {/* Products Section */}
+                    <section className="py-20 md:py-28 bg-gradient-to-b from-[#FAF7F2] to-white">
+                        <div className="container mx-auto px-4">
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                viewport={{ once: true }}
+                                className="text-center mb-16"
+                            >
+                                <span className="text-[#C9A962] text-sm tracking-[0.3em] uppercase mb-4 block">مميزة</span>
+                                <h2 className="text-4xl md:text-5xl font-bold text-[#3D3021] mb-4">
+                                    المنتجات المميزة
+                                </h2>
+                                <p className="text-[#8B7355] max-w-xl mx-auto text-lg">
+                                    اكتشف أبرز منتجاتنا المختارة بعناية فائقة
+                                </p>
+                            </motion.div>
+
+                            {isLoadingProducts ? (
+                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                                    {Array.from({ length: 4 }).map((_, i) => (
+                                        <Card key={i} className="overflow-hidden border-0 shadow-lg">
+                                            <div className="aspect-square bg-gradient-to-br from-gray-100 to-gray-200 animate-pulse" />
+                                            <CardContent className="p-4 space-y-3">
+                                                <div className="h-3 bg-gray-200 rounded animate-pulse w-1/3" />
+                                                <div className="h-4 bg-gray-200 rounded animate-pulse" />
+                                                <div className="h-4 bg-gray-200 rounded animate-pulse w-2/3" />
+                                            </CardContent>
+                                        </Card>
+                                    ))}
+                                </div>
+                            ) : products.length === 0 ? (
+                                <div className="text-center py-20">
+                                    <Sparkles className="h-16 w-16 mx-auto text-[#C9A962]/50 mb-4" />
+                                    <p className="text-[#8B7355] text-lg">لا توجد منتجات مميزة حالياً</p>
+                                </div>
+                            ) : (
+                                <motion.div
+                                    variants={staggerContainer}
+                                    initial="initial"
+                                    whileInView="animate"
+                                    viewport={{ once: true }}
+                                    className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8"
+                                >
+                                    {products.map((product, index) => (
+                                        <motion.div
+                                            key={product.id}
+                                            variants={fadeInUp}
+                                            whileHover={{ y: -10 }}
+                                            className="group cursor-pointer"
+                                            onClick={() => router.push(`/products/${product.id}`)}
+                                        >
+                                            <Card className="overflow-hidden border-0 shadow-lg hover:shadow-2xl transition-all duration-500 bg-white rounded-2xl">
+                                                <div className="relative aspect-square overflow-hidden">
+                                                    <img
+                                                        src={product.mainImage}
+                                                        alt={product.nameAr}
+                                                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                                                    />
+                                                    <div className="absolute top-3 right-3 flex flex-col gap-2">
+                                                        {product.isFeatured && (
+                                                            <Badge className="bg-gradient-to-r from-[#C9A962] to-[#B8956E] text-white border-0 px-3 py-1 rounded-full">
+                                                                <Star className="h-3 w-3 ml-1" />
+                                                                مميز
+                                                            </Badge>
+                                                        )}
+                                                        {product.originalPrice && product.originalPrice > product.price && (
+                                                            <Badge className="bg-gradient-to-r from-rose-500 to-pink-500 text-white border-0 px-3 py-1 rounded-full">
+                                                                -{Math.round((1 - product.price / product.originalPrice) * 100)}%
+                                                            </Badge>
+                                                        )}
+                                                    </div>
+
+                                                    {/* Quick Actions */}
+                                                    <div className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                                        <div className="flex gap-2">
+                                                            <Button
+                                                                size="sm"
+                                                                className="flex-1 bg-gradient-to-r from-[#C9A962] to-[#B8956E] hover:from-[#B8956E] hover:to-[#9A7B4F] text-white rounded-full"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    openWhatsApp(`استفسار عن منتج: ${product.nameAr}`);
+                                                                }}
+                                                            >
+                                                                <MessageCircle className="h-4 w-4 ml-1" />
+                                                                استفسار
+                                                            </Button>
+                                                            <Button
+                                                                size="sm"
+                                                                variant="ghost"
+                                                                className="bg-white/90 hover:bg-white rounded-full"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    toggleWishlist({
+                                                                        productId: product.id,
+                                                                        name: product.name,
+                                                                        nameAr: product.nameAr,
+                                                                        price: product.price,
+                                                                        originalPrice: product.originalPrice,
+                                                                        image: product.mainImage,
+                                                                    });
+                                                                    toast({
+                                                                        title: isInWishlist(product.id) ? "تمت الإزالة" : "تمت الإضافة",
+                                                                        description: isInWishlist(product.id) ? "تم إزالة المنتج من المفضلة" : "تم إضافة المنتج للمفضلة",
+                                                                    });
+                                                                }}
+                                                            >
+                                                                <Heart className={`h-4 w-4 ${isInWishlist(product.id) ? 'fill-rose-500 text-rose-500' : ''}`} />
+                                                            </Button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <CardContent className="p-5">
+                                                    <p className="text-xs text-[#C9A962] font-medium mb-2 uppercase tracking-wider">
+                                                        {product.category?.nameAr || "بدون تصنيف"}
+                                                    </p>
+                                                    <h3 className="font-semibold text-[#3D3021] text-base mb-3 line-clamp-2 min-h-[48px]">
+                                                        {product.nameAr}
+                                                    </h3>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-xl font-bold text-[#8B7355]">
+                                                            {product.price.toLocaleString()} ر.ي
+                                                        </span>
+                                                        {product.originalPrice && product.originalPrice > product.price && (
+                                                            <span className="text-sm text-[#A69B8D] line-through">
+                                                                {product.originalPrice.toLocaleString()}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </CardContent>
+                                            </Card>
+                                        </motion.div>
+                                    ))}
+                                </motion.div>
+                            )}
+
+                            <div className="text-center mt-16">
+                                <Link href="/products">
+                                    <Button
+                                        size="lg"
+                                        variant="outline"
+                                        className="border-2 border-[#C9A962] text-[#8B7355] hover:bg-[#C9A962] hover:text-white px-12 py-7 text-lg rounded-full transition-all duration-300 group"
+                                    >
+                                        عرض جميع المنتجات
+                                        <ArrowLeft className="mr-2 h-5 w-5 group-hover:-translate-x-1 transition-transform" />
+                                    </Button>
+                                </Link>
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* Features Section */}
+                    <section className="py-20 md:py-28 bg-gradient-to-b from-[#3D3021] to-[#2A2318] text-white">
+                        <div className="container mx-auto px-4">
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                viewport={{ once: true }}
+                                className="text-center mb-16"
+                            >
+                                <span className="text-[#C9A962] text-sm tracking-[0.3em] uppercase mb-4 block">لماذا نحن</span>
+                                <h2 className="text-4xl md:text-5xl font-bold mb-4">
+                                    لماذا تَرِفَة؟
+                                </h2>
+                                <p className="text-white/60 max-w-xl mx-auto text-lg">
+                                    نقدم لكِ تجربة تسوق فريدة ومميزة
+                                </p>
+                            </motion.div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                                {[
+                                    {
+                                        icon: Sparkles,
+                                        title: "منتجات أصلية 100%",
+                                        description: "جميع منتجاتنا أصلية مع ضمان الجودة والأصالة"
+                                    },
+                                    {
+                                        icon: Truck,
+                                        title: "توصيل لجميع المحافظات",
+                                        description: "توصيل سريع وآمن لجميع محافظات الجمهورية اليمنية"
+                                    },
+                                    {
+                                        icon: Shield,
+                                        title: "دفع آمن وموثوق",
+                                        description: "طرق دفع متعددة وآمنة تناسب الجميع"
+                                    }
+                                ].map((feature, index) => (
+                                    <motion.div
+                                        key={index}
+                                        initial={{ opacity: 0, y: 30 }}
+                                        whileInView={{ opacity: 1, y: 0 }}
+                                        viewport={{ once: true }}
+                                        transition={{ delay: index * 0.2 }}
+                                        className="text-center p-10 rounded-3xl bg-white/5 backdrop-blur-sm border border-white/10 hover:border-[#C9A962]/50 transition-all duration-300 group"
+                                    >
+                                        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#C9A962] to-[#B8956E] flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
+                                            <feature.icon className="h-10 w-10 text-white" />
                                         </div>
+                                        <h3 className="text-2xl font-bold mb-3">{feature.title}</h3>
+                                        <p className="text-white/60">{feature.description}</p>
                                     </motion.div>
                                 ))}
                             </div>
                         </div>
                     </section>
-                )}
-                {/* Categories Section */}
-                <section className="py-20 md:py-28 bg-white">
-                    <div className="container mx-auto px-4">
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true }}
-                            className="text-center mb-16"
-                        >
-                            <span className="text-[#C9A962] text-sm tracking-[0.3em] uppercase mb-4 block">استكشف</span>
-                            <h2 className="text-4xl md:text-5xl font-bold text-[#3D3021] mb-4">
-                                تصفح الفئات
-                            </h2>
-                            <p className="text-[#8B7355] max-w-xl mx-auto text-lg">
-                                اكتشف مجموعتنا المتنوعة من المنتجات الفاخرة المختارة بعناية
-                            </p>
-                        </motion.div>
 
-                        {categories.length > 0 ? (
+                    {/* CTA Section */}
+                    <section className="py-20 bg-gradient-to-r from-[#C9A962] via-[#B8956E] to-[#C9A962]">
+                        <div className="container mx-auto px-4 text-center">
                             <motion.div
-                                variants={staggerContainer}
-                                initial="initial"
-                                whileInView="animate"
+                                initial={{ opacity: 0, y: 20 }}
+                                whileInView={{ opacity: 1, y: 0 }}
                                 viewport={{ once: true }}
-                                className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8"
                             >
-                                {categories.map((category, index) => (
-                                    <Link key={category.id} href={`/products?category=${category.id}`}>
-                                        <motion.div
-                                            variants={fadeInUp}
-                                            whileHover={{ y: -10, scale: 1.02 }}
-                                            className="group relative aspect-[3/4] rounded-3xl overflow-hidden cursor-pointer shadow-xl hover:shadow-2xl transition-shadow duration-500"
-                                        >
-                                            <img
-                                                src={category.image || `https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400`}
-                                                alt={category.name}
-                                                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                                            />
-                                            <div className="absolute inset-0 bg-gradient-to-t from-[#3D3021]/90 via-[#3D3021]/30 to-transparent" />
-                                            <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-                                                <h3 className="text-xl md:text-2xl font-bold mb-1">{category.nameAr || category.name}</h3>
-                                                <p className="text-white/70 text-sm flex items-center gap-1">
-                                                    <Sparkles className="h-3 w-3" />
-                                                    {category._count?.products || 0} منتج
-                                                </p>
-                                            </div>
-                                            <div className="absolute inset-0 border-2 border-[#C9A962] opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-3xl" />
-                                        </motion.div>
-                                    </Link>
-                                ))}
-                            </motion.div>
-                        ) : (
-                            <div className="text-center py-12">
-                                <p className="text-[#8B7355]">لا توجد فئات حالياً</p>
-                            </div>
-                        )}
-                    </div>
-                </section>
-
-                {/* Products Section */}
-                <section className="py-20 md:py-28 bg-gradient-to-b from-[#FAF7F2] to-white">
-                    <div className="container mx-auto px-4">
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true }}
-                            className="text-center mb-16"
-                        >
-                            <span className="text-[#C9A962] text-sm tracking-[0.3em] uppercase mb-4 block">مميزة</span>
-                            <h2 className="text-4xl md:text-5xl font-bold text-[#3D3021] mb-4">
-                                المنتجات المميزة
-                            </h2>
-                            <p className="text-[#8B7355] max-w-xl mx-auto text-lg">
-                                اكتشف أبرز منتجاتنا المختارة بعناية فائقة
-                            </p>
-                        </motion.div>
-
-                        {isLoadingProducts ? (
-                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                                {Array.from({ length: 4 }).map((_, i) => (
-                                    <Card key={i} className="overflow-hidden border-0 shadow-lg">
-                                        <div className="aspect-square bg-gradient-to-br from-gray-100 to-gray-200 animate-pulse" />
-                                        <CardContent className="p-4 space-y-3">
-                                            <div className="h-3 bg-gray-200 rounded animate-pulse w-1/3" />
-                                            <div className="h-4 bg-gray-200 rounded animate-pulse" />
-                                            <div className="h-4 bg-gray-200 rounded animate-pulse w-2/3" />
-                                        </CardContent>
-                                    </Card>
-                                ))}
-                            </div>
-                        ) : products.length === 0 ? (
-                            <div className="text-center py-20">
-                                <Sparkles className="h-16 w-16 mx-auto text-[#C9A962]/50 mb-4" />
-                                <p className="text-[#8B7355] text-lg">لا توجد منتجات مميزة حالياً</p>
-                            </div>
-                        ) : (
-                            <motion.div
-                                variants={staggerContainer}
-                                initial="initial"
-                                whileInView="animate"
-                                viewport={{ once: true }}
-                                className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8"
-                            >
-                                {products.map((product, index) => (
-                                    <motion.div
-                                        key={product.id}
-                                        variants={fadeInUp}
-                                        whileHover={{ y: -10 }}
-                                        className="group cursor-pointer"
-                                        onClick={() => router.push(`/products/${product.id}`)}
-                                    >
-                                        <Card className="overflow-hidden border-0 shadow-lg hover:shadow-2xl transition-all duration-500 bg-white rounded-2xl">
-                                            <div className="relative aspect-square overflow-hidden">
-                                                <img
-                                                    src={product.mainImage}
-                                                    alt={product.nameAr}
-                                                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                                                />
-                                                <div className="absolute top-3 right-3 flex flex-col gap-2">
-                                                    {product.isFeatured && (
-                                                        <Badge className="bg-gradient-to-r from-[#C9A962] to-[#B8956E] text-white border-0 px-3 py-1 rounded-full">
-                                                            <Star className="h-3 w-3 ml-1" />
-                                                            مميز
-                                                        </Badge>
-                                                    )}
-                                                    {product.originalPrice && product.originalPrice > product.price && (
-                                                        <Badge className="bg-gradient-to-r from-rose-500 to-pink-500 text-white border-0 px-3 py-1 rounded-full">
-                                                            -{Math.round((1 - product.price / product.originalPrice) * 100)}%
-                                                        </Badge>
-                                                    )}
-                                                </div>
-
-                                                {/* Quick Actions */}
-                                                <div className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                                                    <div className="flex gap-2">
-                                                        <Button
-                                                            size="sm"
-                                                            className="flex-1 bg-gradient-to-r from-[#C9A962] to-[#B8956E] hover:from-[#B8956E] hover:to-[#9A7B4F] text-white rounded-full"
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                openWhatsApp(`استفسار عن منتج: ${product.nameAr}`);
-                                                            }}
-                                                        >
-                                                            <MessageCircle className="h-4 w-4 ml-1" />
-                                                            استفسار
-                                                        </Button>
-                                                        <Button
-                                                            size="sm"
-                                                            variant="ghost"
-                                                            className="bg-white/90 hover:bg-white rounded-full"
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                toggleWishlist({
-                                                                    productId: product.id,
-                                                                    name: product.name,
-                                                                    nameAr: product.nameAr,
-                                                                    price: product.price,
-                                                                    originalPrice: product.originalPrice,
-                                                                    image: product.mainImage,
-                                                                });
-                                                                toast({
-                                                                    title: isInWishlist(product.id) ? "تمت الإزالة" : "تمت الإضافة",
-                                                                    description: isInWishlist(product.id) ? "تم إزالة المنتج من المفضلة" : "تم إضافة المنتج للمفضلة",
-                                                                });
-                                                            }}
-                                                        >
-                                                            <Heart className={`h-4 w-4 ${isInWishlist(product.id) ? 'fill-rose-500 text-rose-500' : ''}`} />
-                                                        </Button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <CardContent className="p-5">
-                                                <p className="text-xs text-[#C9A962] font-medium mb-2 uppercase tracking-wider">
-                                                    {product.category?.nameAr || "بدون تصنيف"}
-                                                </p>
-                                                <h3 className="font-semibold text-[#3D3021] text-base mb-3 line-clamp-2 min-h-[48px]">
-                                                    {product.nameAr}
-                                                </h3>
-                                                <div className="flex items-center gap-2">
-                                                    <span className="text-xl font-bold text-[#8B7355]">
-                                                        {product.price.toLocaleString()} ر.ي
-                                                    </span>
-                                                    {product.originalPrice && product.originalPrice > product.price && (
-                                                        <span className="text-sm text-[#A69B8D] line-through">
-                                                            {product.originalPrice.toLocaleString()}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            </CardContent>
-                                        </Card>
-                                    </motion.div>
-                                ))}
-                            </motion.div>
-                        )}
-
-                        <div className="text-center mt-16">
-                            <Link href="/products">
+                                <Gift className="h-12 w-12 text-white mx-auto mb-6" />
+                                <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+                                    انضم إلى عائلة تَرِفَة
+                                </h2>
+                                <p className="text-white/80 max-w-xl mx-auto mb-8 text-lg">
+                                    سجل الآن واحصلي على خصم على أول طلب لك
+                                </p>
                                 <Button
                                     size="lg"
-                                    variant="outline"
-                                    className="border-2 border-[#C9A962] text-[#8B7355] hover:bg-[#C9A962] hover:text-white px-12 py-7 text-lg rounded-full transition-all duration-300 group"
+                                    className="bg-white text-[#8B7355] hover:bg-[#FAF7F2] px-12 py-7 text-lg rounded-full shadow-xl transition-all duration-300"
+                                    onClick={() => {
+                                        setAuthTab("register");
+                                        setIsAuthOpen(true);
+                                    }}
                                 >
-                                    عرض جميع المنتجات
-                                    <ArrowLeft className="mr-2 h-5 w-5 group-hover:-translate-x-1 transition-transform" />
+                                    إنشاء حساب جديد
                                 </Button>
-                            </Link>
+                            </motion.div>
                         </div>
-                    </div>
-                </section>
+                    </section>
+                </main>
 
-                {/* Features Section */}
-                <section className="py-20 md:py-28 bg-gradient-to-b from-[#3D3021] to-[#2A2318] text-white">
-                    <div className="container mx-auto px-4">
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true }}
-                            className="text-center mb-16"
-                        >
-                            <span className="text-[#C9A962] text-sm tracking-[0.3em] uppercase mb-4 block">لماذا نحن</span>
-                            <h2 className="text-4xl md:text-5xl font-bold mb-4">
-                                لماذا تَرِفَة؟
-                            </h2>
-                            <p className="text-white/60 max-w-xl mx-auto text-lg">
-                                نقدم لكِ تجربة تسوق فريدة ومميزة
-                            </p>
-                        </motion.div>
+                {/* Footer */}
+                <Footer />
 
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                            {[
-                                {
-                                    icon: Sparkles,
-                                    title: "منتجات أصلية 100%",
-                                    description: "جميع منتجاتنا أصلية مع ضمان الجودة والأصالة"
-                                },
-                                {
-                                    icon: Truck,
-                                    title: "توصيل لجميع المحافظات",
-                                    description: "توصيل سريع وآمن لجميع محافظات الجمهورية اليمنية"
-                                },
-                                {
-                                    icon: Shield,
-                                    title: "دفع آمن وموثوق",
-                                    description: "طرق دفع متعددة وآمنة تناسب الجميع"
-                                }
-                            ].map((feature, index) => (
-                                <motion.div
-                                    key={index}
-                                    initial={{ opacity: 0, y: 30 }}
-                                    whileInView={{ opacity: 1, y: 0 }}
-                                    viewport={{ once: true }}
-                                    transition={{ delay: index * 0.2 }}
-                                    className="text-center p-10 rounded-3xl bg-white/5 backdrop-blur-sm border border-white/10 hover:border-[#C9A962]/50 transition-all duration-300 group"
-                                >
-                                    <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#C9A962] to-[#B8956E] flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
-                                        <feature.icon className="h-10 w-10 text-white" />
-                                    </div>
-                                    <h3 className="text-2xl font-bold mb-3">{feature.title}</h3>
-                                    <p className="text-white/60">{feature.description}</p>
-                                </motion.div>
-                            ))}
-                        </div>
-                    </div>
-                </section>
-
-                {/* CTA Section */}
-                <section className="py-20 bg-gradient-to-r from-[#C9A962] via-[#B8956E] to-[#C9A962]">
-                    <div className="container mx-auto px-4 text-center">
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true }}
-                        >
-                            <Gift className="h-12 w-12 text-white mx-auto mb-6" />
-                            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-                                انضم إلى عائلة تَرِفَة
-                            </h2>
-                            <p className="text-white/80 max-w-xl mx-auto mb-8 text-lg">
-                                سجل الآن واحصلي على خصم على أول طلب لك
-                            </p>
-                            <Button
-                                size="lg"
-                                className="bg-white text-[#8B7355] hover:bg-[#FAF7F2] px-12 py-7 text-lg rounded-full shadow-xl transition-all duration-300"
-                                onClick={() => {
-                                    setAuthTab("register");
-                                    setIsAuthOpen(true);
-                                }}
-                            >
-                                إنشاء حساب جديد
-                            </Button>
-                        </motion.div>
-                    </div>
-                </section>
-            </main>
-
-            {/* Footer */}
-            <Footer />
-
-            {/* Chat Widget for everyone (Guest or User) */}
-            <ChatWidget
-                userId={user?.id || ""}
-                userName={user?.name || "زائر"}
-                userRole={user?.role || "GUEST"}
-            />
-            <BottomNav
-                user={user}
-                onOpenCart={() => setIsCartOpen(true)}
-                onOpenAuth={() => {
-                    setAuthTab("login");
-                    setIsAuthOpen(true);
-                }}
-            />
-        </div>
+                {/* Chat Widget for everyone (Guest or User) */}
+                <ChatWidget
+                    userId={user?.id || ""}
+                    userName={user?.name || "زائر"}
+                    userRole={user?.role || "GUEST"}
+                />
+                <BottomNav
+                    user={user}
+                    onOpenCart={() => setIsCartOpen(true)}
+                    onOpenAuth={() => {
+                        setAuthTab("login");
+                        setIsAuthOpen(true);
+                    }}
+                />
+            </div>
+        </Suspense>
     );
 }
