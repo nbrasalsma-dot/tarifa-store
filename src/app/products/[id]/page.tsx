@@ -715,18 +715,35 @@ export default function ProductDetailPage() {
                   <ShoppingCart className="h-5 w-5 ml-2" />
                   {isInCart(product.id) ? "تحديث السلة" : "أضف للسلة"}
                 </Button>
+                {/* زر الاستفسار المعدل */}
                 <Button
                   variant="outline"
                   size="lg"
                   className="w-full py-6 rounded-full border-[#C9A962] text-[#3D3021] hover:bg-[#FAF7F2] gap-2 font-bold shadow-sm"
                   onClick={() => {
-                    // هذا السطر يبحث عن أيقونة الشات في الزاوية ويضغط عليها بدلاً عن العميل
-                    const chatButton = document.querySelector('button.fixed.bottom-6.left-6') as HTMLButtonElement;
-                    if (chatButton) chatButton.click();
+                    if (!user) {
+                      toast({
+                        title: "تسجيل الدخول مطلوب",
+                        description: "يرجى تسجيل الدخول للاستفسار عن المنتج",
+                        variant: "destructive",
+                      });
+                      setIsAuthOpen(true);
+                      return;
+                    }
+    
+                    // فتح الشات مباشرة
+                    const chatButton = document.querySelector('.fixed.bottom-6.left-6 button') as HTMLButtonElement;
+                    if (chatButton) {
+                      chatButton.click();
+                    } else {
+                      // محاولة ثانية بإختيار آخر
+                      const btn = document.querySelector('button.fixed.bottom-6.left-6') as HTMLButtonElement;
+                      if (btn) btn.click();
+                    }
                   }}
                 >
                   <MessageCircle className="h-5 w-5 text-[#C9A962]" />
-                  استفسر عن هذا المنتج عبر الدردشة
+                  استفسر عن هذا المنتج
                 </Button>
 
                 <div className="grid grid-cols-2 gap-3">
