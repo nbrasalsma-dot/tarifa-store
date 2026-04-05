@@ -1,295 +1,94 @@
 /**
- * Security Proxy for Tarifa Store (Next.js 16)
- * Provides protection against common web vulnerabilities
+ * 🔒 Security Proxy - SECURED VERSION v2.0
+ * Enhanced CORS + Security Headers + Rate Limiting
  */
+import{NextRequest,NextResponse}from'next/server';
 
-import { NextRequest, NextResponse } from 'next/server';
-
-// Rate limiting configuration
-const rateLimitConfig = {
-  windowMs: 60 * 1000, // 1 minute
-  maxRequests: 100, // max requests per window
-  authMaxRequests: 10, // stricter limit for auth endpoints
+const config={
+  allowedOrigins:(process.env.ALLOWED_ORIGINS||'http://localhost:3000').split(','),
+  rateLimits:{general:100,auth:10,upload:5},
 };
+const rateStore=new Map<string,{count:number;resetTime:number}>();
+const blockedIPs=new Set<string>();
 
-// In-memory rate limiting store (consider Redis for production)
-const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
-
-// Blocked IPs (can be populated dynamically)
-const blockedIPs = new Set<string>();
-
-// Suspicious patterns
-const suspiciousPatterns = [
-  // SQL Injection
-  /(\b(SELECT|INSERT|UPDATE|DELETE|DROP|UNION|ALTER|CREATE|TRUNCATE)\b)/i,
-  /(--)|(\/\*)|(\*\/)/,
-  /(\bOR\b|\bAND\b)\s*[\d\w]+\s*=\s*[\d\w]+/i,
-  /('|")\s*(\bOR\b|\bAND\b)/i,
-  
-  // XSS
-  /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
-  /javascript:/i,
-  /on\w+\s*=/i,
-  /<iframe/i,
-  /<object/i,
-  /<embed/i,
-  
-  // Path traversal
-  /\.\.\//,
-  /\.\.\\/,
-  
-  // Command injection
-  /[;&|`$]/,
-  /\b(eval|exec|system|shell|passthru|popen)\b/i,
-  
-  // NoSQL injection
-  /\$where/i,
-  /\$regex/i,
-  /\$gt/i,
-  /\$lt/i,
-];
-
-// Security headers
-const securityHeaders = {
-  'X-DNS-Prefetch-Control': 'on',
-  'X-XSS-Protection': '1; mode=block',
-  'X-Frame-Options': 'SAMEORIGIN',
-  'X-Content-Type-Options': 'nosniff',
-  'Referrer-Policy': 'strict-origin-when-cross-origin',
-  'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
-};
-
-/**
- * Get client IP address
- */
-function getClientIP(request: NextRequest): string {
-  const xForwardedFor = request.headers.get('x-forwarded-for');
-  const xRealIP = request.headers.get('x-real-ip');
-  
-  if (xForwardedFor) {
-    return xForwardedFor.split(',')[0].trim();
-  }
-  
-  if (xRealIP) {
-    return xRealIP.trim();
-  }
-  
-  return 'unknown';
+function getClientIP(r:NextRequest):string{
+  return r.headers.get('x-forwarded-for')?.split(',')[0]?.trim()||r.headers.get('x-real-ip')||'127.0.0.1';
 }
 
-/**
- * Check rate limiting
- */
-function checkRateLimit(ip: string, isAuthEndpoint: boolean): { allowed: boolean; remaining: number; resetTime: number } {
-  const now = Date.now();
-  const key = isAuthEndpoint ? `auth:${ip}` : ip;
-  const maxRequests = isAuthEndpoint ? rateLimitConfig.authMaxRequests : rateLimitConfig.maxRequests;
-  
-  let record = rateLimitStore.get(key);
-  
-  if (!record || now > record.resetTime) {
-    record = { count: 0, resetTime: now + rateLimitConfig.windowMs };
-  }
-  
-  record.count++;
-  rateLimitStore.set(key, record);
-  
-  // Clean up old entries periodically
-  if (Math.random() < 0.01) {
-    for (const [k, v] of rateLimitStore.entries()) {
-      if (now > v.resetTime) {
-        rateLimitStore.delete(k);
-      }
-    }
-  }
-  
-  return {
-    allowed: record.count <= maxRequests,
-    remaining: Math.max(0, maxRequests - record.count),
-    resetTime: record.resetTime,
-  };
+function checkRate(ip:string,type='general'){
+  const now=Date.now();const k=`${type}:${ip}`;const max=config.rateLimits[type]||100;
+  let r=rateStore.get(k);
+  if(!r||now>r.resetTime){rateStore.set(k,{count:1,resetTime:now+60000});return{allowed:true,remaining:max-1};}
+  r.count++;return{allowed:r.count<=max,remaining:Math.max(0,max-r.count)};
 }
 
-/**
- * Check for suspicious content
- */
-function hasSuspiciousContent(request: NextRequest): boolean {
-  const url = request.nextUrl.search;
-  const pathname = request.nextUrl.pathname;
-  
-  // Check URL parameters
-  for (const pattern of suspiciousPatterns) {
-    if (pattern.test(url) || pattern.test(pathname)) {
-      return true;
-    }
-  }
-  
-  return false;
+function logSec(type,ip,req,details?){
+  console.warn(`[PROXY] ${type}`,JSON.stringify({ts:new Date().toISOString(),ip,url:req.nextUrl.pathname,method:req.method,details}));
 }
 
-/**
- * Validate request headers
- */
-function validateHeaders(request: NextRequest): boolean {
-  const userAgent = request.headers.get('user-agent');
+export default function proxy(req:NextRequest){
+  const ip=getClientIP(req);const path=req.nextUrl.pathname;
   
-  // Check for suspicious user agents
-  const suspiciousUserAgents = [
-    /sqlmap/i,
-    /nikto/i,
-    /nmap/i,
-    /masscan/i,
-    /burp/i,
-    /owasp/i,
-    /metasploit/i,
-    /scanner/i,
-  ];
+  // Development mode - relaxed but safe
+  if(process.env.NODE_ENV==='development'){
+    const res=NextResponse.next();
+    if(path.startsWith('/api/')){
+      res.headers.set('Access-Control-Allow-Origin',req.headers.get('origin')||'*');
+      res.headers.set('Access-Control-Allow-Methods','GET,POST,PUT,DELETE,OPTIONS');
+      res.headers.set('Access-Control-Allow-Headers','Content-Type,Authorization');
+    }
+    return res;
+  }
   
-  if (userAgent) {
-    for (const pattern of suspiciousUserAgents) {
-      if (pattern.test(userAgent)) {
-        return false;
-      }
+  // OPTIONS preflight
+  if(req.method==='OPTIONS'){
+    const res=new NextResponse(null,{status:204});
+    res.headers.set('Access-Control-Allow-Origin',req.headers.get('origin')||config.allowedOrigins[0]);
+    res.headers.set('Access-Control-Allow-Methods','GET,POST,PUT,DELETE,OPTIONS');
+    return res;
+  }
+  
+  // IP Blocking
+  if(blockedIPs.has(ip)){logSec('BLOCKED',ip,req);return new NextResponse('Forbidden',{status:403});}
+  
+  // Suspicious patterns check
+  if(/<script|javascript:|SELECT|UNION|DROP|--/.test(path)){blockedIPs.add(ip);logSec('SUSPICIOUS',ip,req);return new NextResponse('Bad Request',{status:400});}
+  
+  // Rate limiting for API
+  if(path.startsWith('/api/')){
+    const rl=checkRate(ip,path.includes('/auth/')?'auth':path.includes('/upload')?'upload':'general');
+    if(!rl.allowed){
+      logSec('RATE_LIMITED',ip,req);
+      return new NextResponse(JSON.stringify({error:'تم تجاوز حد الطلبات'}),{status:429,headers:{'Content-Type':'application/json','Retry-After':'60'}});
     }
   }
   
-  return true;
-}
-
-/**
- * Log security event
- */
-function logSecurityEvent(
-  type: 'BLOCKED' | 'RATE_LIMITED' | 'SUSPICIOUS',
-  ip: string,
-  request: NextRequest,
-  details?: string
-) {
-  const logEntry = {
-    timestamp: new Date().toISOString(),
-    type,
-    ip,
-    method: request.method,
-    url: request.nextUrl.pathname,
-    userAgent: request.headers.get('user-agent'),
-    details,
-  };
+  const response=NextResponse.next();
   
-  // In production, send to logging service
-  console.warn('[SECURITY]', JSON.stringify(logEntry));
-}
-
-// Next.js 16 uses default export for proxy
-export default function proxy(request: NextRequest) {
-  const ip = getClientIP(request);
-  const pathname = request.nextUrl.pathname;
+  // Security Headers
+  response.headers.set('X-Content-Type-Options','nosniff');
+  response.headers.set('X-Frame-Options','DENY');
+  response.headers.set('X-XSS-Protection','1;mode=block');
+  response.headers.set('Referrer-Policy','strict-origin-when-cross-origin');
+  response.headers.set('Permissions-Policy','camera=(),microphone=(),geolocation=()');
+  response.headers.set('Content-Security-Policy',"default-src 'self';script-src 'self' 'unsafe-inline';style-src 'self' 'unsafe-inline';img-src 'self' data: https:");
   
-  // 👈 إضافة سحرية: تجاهل الحماية أثناء فترة البرمجة (Localhost)
-  const isDevelopment = process.env.NODE_ENV === 'development';
-  if (isDevelopment) {
-    // إضافة هيدر الكورس للـ API عشان ما تضرب عليك واجهات التطوير
-    const response = NextResponse.next();
-    if (pathname.startsWith('/api/')) {
-      response.headers.set('Access-Control-Allow-Origin', request.headers.get('origin') || '*');
-      response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-      response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  if(process.env.NODE_ENV==='production')response.headers.set('Strict-Transport-Security','max-age=63072000;includeSubDomains;preload');
+  
+  // CORS - Restricted
+  if(path.startsWith('/api/')){
+    const origin=req.headers.get('origin');
+    if(config.allowedOrigins.some(o=>{
+      try{return new URL(o.trim()).origin===new URL(origin).origin;}catch{return o.trim()===origin;}
+    })||!origin){
+      response.headers.set('Access-Control-Allow-Origin',origin||config.allowedOrigins[0]);
     }
-    return response; 
-  }
-
-  // 👈 تجاوز بعض المسارات الضرورية
-  if (pathname === '/api/admin/create-manual-user') {
-    return NextResponse.next(); 
-  }
-    if (pathname === '/api/auth/google/callback' && request.method === 'GET') {
-        const hasCode = request.nextUrl.searchParams.has('code');
-        const hasError = request.nextUrl.searchParams.has('error');
-        if (hasCode || hasError) {
-            return NextResponse.next();
-        }
-    }
-  
-  // Check if IP is blocked
-  if (blockedIPs.has(ip)) {
-    logSecurityEvent('BLOCKED', ip, request, 'Blocked IP');
-    return new NextResponse('Forbidden', { status: 403 });
+    response.headers.set('Access-Control-Allow-Methods','GET,POST,PUT,DELETE,OPTIONS');
+    response.headers.set('Vary','Origin');
   }
   
-  // Check for suspicious content
-  if (hasSuspiciousContent(request)) {
-    blockedIPs.add(ip); // Block the IP
-    logSecurityEvent('SUSPICIOUS', ip, request, 'Suspicious pattern detected');
-    return new NextResponse('Bad Request', { status: 400 });
-  }
-  
-  // Validate headers
-  if (!validateHeaders(request)) {
-    logSecurityEvent('SUSPICIOUS', ip, request, 'Suspicious user agent');
-    return new NextResponse('Forbidden', { status: 403 });
-  }
-  
-  // Check rate limiting for API routes
-  if (pathname.startsWith('/api/')) {
-    const isAuthEndpoint = pathname.includes('/auth/');
-    const rateLimit = checkRateLimit(ip, isAuthEndpoint);
-    
-    if (!rateLimit.allowed) {
-      logSecurityEvent('RATE_LIMITED', ip, request, `Rate limit exceeded: ${pathname}`);
-      return new NextResponse(
-        JSON.stringify({ error: 'تم تجاوز حد الطلبات، يرجى المحاولة لاحقاً' }),
-        {
-          status: 429,
-          headers: {
-            'Content-Type': 'application/json',
-            'Retry-After': String(Math.ceil((rateLimit.resetTime - Date.now()) / 1000)),
-          },
-        }
-      );
-    }
-  }
-  
-  // Create response with security headers
-  const response = NextResponse.next();
-  
-  // Apply security headers
-  for (const [header, value] of Object.entries(securityHeaders)) {
-    response.headers.set(header, value);
-  }
-  
-  // Add HSTS in production
-  if (process.env.NODE_ENV === 'production') {
-    response.headers.set(
-      'Strict-Transport-Security',
-      'max-age=63072000; includeSubDomains; preload'
-    );
-  }
-  
-  // Add CORS headers for API routes
-  if (pathname.startsWith('/api/')) {
-    response.headers.set('Access-Control-Allow-Origin', request.headers.get('origin') || '*');
-    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-    response.headers.set('Access-Control-Max-Age', '86400');
-  }
-  
-  // Remove server information
   response.headers.delete('X-Powered-By');
-  
   return response;
 }
 
-/**
- * Configure which routes to apply proxy
- */
-export const config = {
-  matcher: [
-    /*
-     * Match all request paths except:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public folder files
-     */
-    '/((?!_next/static|_next/image|favicon.ico|public/).*)',
-  ],
-};
+export const matcherConfig={matcher:['/((?!_next/static|_next/image|favicon.ico|public/).*)']};
