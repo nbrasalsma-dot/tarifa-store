@@ -216,7 +216,7 @@ const handleSendMessage = async () => {
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.9 }}
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 left-6 z-50 w-14 h-14 rounded-full bg-gradient-to-r from-[var(--gold-light)] to-[var(--gold)] shadow-lg hover:shadow-xl flex items-center justify-center text-white"
+        className="fixed bottom-24 md:bottom-6 left-6 z-[60] w-14 h-14 rounded-full bg-gradient-to-r from-[var(--gold-light)] to-[var(--gold)] shadow-lg hover:shadow-xl flex items-center justify-center text-white"
       >
         <MessageCircle className="h-6 w-6" />
         <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-xs flex items-center justify-center">
@@ -233,7 +233,7 @@ const handleSendMessage = async () => {
       initial={{ opacity: 0, y: 100 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 100 }}
-      className={`fixed bottom-6 left-6 z-50 bg-white rounded-2xl shadow-2xl overflow-hidden transition-all duration-300 ${
+      className={`fixed bottom-24 md:bottom-6 left-4 md:left-6 z-[60] bg-white rounded-2xl shadow-2xl overflow-hidden transition-all duration-300 ${
         isMinimized ? "w-80 h-14" : "w-80 md:w-96 h-[500px]"
       }`}
     >

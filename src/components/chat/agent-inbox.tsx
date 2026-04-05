@@ -120,7 +120,7 @@ export function AgentInbox({ agentId }: AgentInboxProps) {
   }
 
   return (
-    <div className="flex h-[600px] bg-white rounded-2xl shadow-sm border overflow-hidden">
+    <div className="flex h-[calc(100vh-180px)] md:h-[600px] w-full bg-white rounded-2xl shadow-sm border overflow-hidden">
       {/* القائمة الجانبية (صندوق الوارد) */}
       <div className={`${activeConv ? 'hidden md:flex' : 'flex'} w-full md:w-1/3 flex-col border-l bg-gray-50/50`}>
         <div className="p-4 border-b bg-white">
@@ -157,7 +157,7 @@ export function AgentInbox({ agentId }: AgentInboxProps) {
                       <User className="h-5 w-5" />
                     </AvatarFallback>
                   </Avatar>
-                  <div className="flex-1 overflow-hidden">
+                  <div className="flex-1 overflow-hidden min-w-0">
                     <h4 className="font-bold text-sm text-gray-800 truncate">
                       {conv.customer?.name || "زائر"}
                       {/* لمسة الإدارة: إظهار اسم الموظف المسؤول عن المحادثة */}

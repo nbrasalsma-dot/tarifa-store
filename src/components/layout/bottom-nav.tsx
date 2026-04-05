@@ -23,7 +23,7 @@ export function BottomNav({ onOpenCart, onOpenAuth, user }: any) {
     ];
 
     return (
-        <div className="md:hidden fixed bottom-0 left-0 right-0 z-50">
+        <div className="md:hidden fixed bottom-0 left-0 right-0 z-40">
             {/* خلفية زجاجية فخمة مع انحناء علوي بسيط */}
             <div className="bg-white/95 backdrop-blur-lg border-t border-gray-100 px-2 pb-safe-area-inset-bottom">
                 <div className="flex justify-around items-center h-16">
