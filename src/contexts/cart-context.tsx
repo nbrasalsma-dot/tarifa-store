@@ -5,7 +5,13 @@
 
 "use client";
 
-import { createContext, useContext, useReducer, useEffect, useCallback } from "react";
+import {
+  createContext,
+  useContext,
+  useReducer,
+  useEffect,
+  useCallback,
+} from "react";
 import { io, Socket } from "socket.io-client";
 
 // Types
@@ -20,6 +26,7 @@ export interface CartItem {
   quantity: number;
   stock: number;
   color?: string | null; // أضف هذا السطر هنا
+  size?: string | null;
 }
 
 export interface Cart {
@@ -39,7 +46,10 @@ type CartAction =
   | { type: "SET_CART"; payload: Cart }
   | { type: "ADD_ITEM"; payload: CartItem }
   | { type: "REMOVE_ITEM"; payload: string }
-  | { type: "UPDATE_QUANTITY"; payload: { productId: string; quantity: number } }
+  | {
+      type: "UPDATE_QUANTITY";
+      payload: { productId: string; quantity: number };
+    }
   | { type: "CLEAR_CART" }
   | { type: "SET_LOADING"; payload: boolean };
 
@@ -56,9 +66,16 @@ const initialState: CartState = {
 };
 
 // Calculate cart totals
-function calculateTotals(items: CartItem[]): { total: number; itemCount: number; discount: number } {
+function calculateTotals(items: CartItem[]): {
+  total: number;
+  itemCount: number;
+  discount: number;
+} {
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
-  const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const total = items.reduce(
+    (sum, item) => sum + item.price * item.quantity,
+    0,
+  );
   const discount = items.reduce((sum, item) => {
     if (item.originalPrice && item.originalPrice > item.price) {
       return sum + (item.originalPrice - item.price) * item.quantity;
@@ -83,7 +100,9 @@ function cartReducer(state: CartState, action: CartAction): CartState {
     case "ADD_ITEM": {
       // تعديل هذا السطر ليبحث عن المنتج واللون معاً
       const existingIndex = state.cart.items.findIndex(
-        (item) => item.productId === action.payload.productId && item.color === action.payload.color
+        (item) =>
+          item.productId === action.payload.productId &&
+          item.color === action.payload.color,
       );
 
       let newItems: CartItem[];
@@ -92,8 +111,14 @@ function cartReducer(state: CartState, action: CartAction): CartState {
         // Update quantity if item exists
         newItems = state.cart.items.map((item, index) =>
           index === existingIndex
-            ? { ...item, quantity: Math.min(item.quantity + action.payload.quantity, item.stock) }
-            : item
+            ? {
+                ...item,
+                quantity: Math.min(
+                  item.quantity + action.payload.quantity,
+                  item.stock,
+                ),
+              }
+            : item,
         );
       } else {
         // Add new item
@@ -110,7 +135,9 @@ function cartReducer(state: CartState, action: CartAction): CartState {
     }
 
     case "REMOVE_ITEM": {
-      const newItems = state.cart.items.filter((item) => item.productId !== action.payload);
+      const newItems = state.cart.items.filter(
+        (item) => item.productId !== action.payload,
+      );
       const totals = calculateTotals(newItems);
 
       return {
@@ -123,8 +150,14 @@ function cartReducer(state: CartState, action: CartAction): CartState {
     case "UPDATE_QUANTITY": {
       const newItems = state.cart.items.map((item) =>
         item.productId === action.payload.productId
-          ? { ...item, quantity: Math.min(Math.max(action.payload.quantity, 1), item.stock) }
-          : item
+          ? {
+              ...item,
+              quantity: Math.min(
+                Math.max(action.payload.quantity, 1),
+                item.stock,
+              ),
+            }
+          : item,
       );
       const totals = calculateTotals(newItems);
 
@@ -165,33 +198,36 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-
 function encryptData(data: string): string {
-    try {
-        const key = "tarifa-cart-secret-2024";
-        let result = "";
-        const encodedData = encodeURIComponent(data);
-        for (let i = 0; i < encodedData.length; i++) {
-            result += String.fromCharCode(encodedData.charCodeAt(i) ^ key.charCodeAt(i % key.length));
-        }
-        return btoa(result);
-    } catch {
-        return "";
+  try {
+    const key = "tarifa-cart-secret-2024";
+    let result = "";
+    const encodedData = encodeURIComponent(data);
+    for (let i = 0; i < encodedData.length; i++) {
+      result += String.fromCharCode(
+        encodedData.charCodeAt(i) ^ key.charCodeAt(i % key.length),
+      );
     }
+    return btoa(result);
+  } catch {
+    return "";
+  }
 }
 
 function decryptData(encrypted: string): string {
-    try {
-        const key = "tarifa-cart-secret-2024";
-        const data = atob(encrypted);
-        let result = "";
-        for (let i = 0; i < data.length; i++) {
-            result += String.fromCharCode(data.charCodeAt(i) ^ key.charCodeAt(i % key.length));
-        }
-        return decodeURIComponent(result);
-    } catch {
-        return "";
+  try {
+    const key = "tarifa-cart-secret-2024";
+    const data = atob(encrypted);
+    let result = "";
+    for (let i = 0; i < data.length; i++) {
+      result += String.fromCharCode(
+        data.charCodeAt(i) ^ key.charCodeAt(i % key.length),
+      );
     }
+    return decodeURIComponent(result);
+  } catch {
+    return "";
+  }
 }
 
 // Provider
@@ -254,15 +290,17 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     (productId: string) => {
       return state.cart.items.some((item) => item.productId === productId);
     },
-    [state.cart.items]
+    [state.cart.items],
   );
 
   const getItemQuantity = useCallback(
     (productId: string) => {
-      const item = state.cart.items.find((item) => item.productId === productId);
+      const item = state.cart.items.find(
+        (item) => item.productId === productId,
+      );
       return item?.quantity || 0;
     },
-    [state.cart.items]
+    [state.cart.items],
   );
 
   return (

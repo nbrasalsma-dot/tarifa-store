@@ -7,6 +7,7 @@
 
 import { useState, useEffect } from "react";
 import { ReuploadProofDialog } from "./reupload-proof-dialog";
+import { AgentInbox } from "@/components/chat/agent-inbox";
 import { motion } from "framer-motion";
 import { NotificationBell } from "../layout/notification-bell";
 import { pusherClient } from "@/lib/pusher";
@@ -33,6 +34,7 @@ import {
   AlertCircle,
   FileText,
   RefreshCw,
+  MessageCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -87,11 +89,20 @@ interface Order {
       price: number;
     };
   }>;
+  customer?: {
+    name: string;
+    email: string;
+  };
 }
 
-export function CustomerDashboard({ user, onLogout, onViewStore }: CustomerDashboardProps) {
+export function CustomerDashboard({
+  user,
+  onLogout,
+  onViewStore,
+}: CustomerDashboardProps) {
   const [activeTab, setActiveTab] = useState("orders");
   const [orders, setOrders] = useState<Order[]>([]);
+  const [isChatOpen, setIsChatOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isReuploadOpen, setIsReuploadOpen] = useState(false);
@@ -105,7 +116,7 @@ export function CustomerDashboard({ user, onLogout, onViewStore }: CustomerDashb
   });
   const [isSaving, setIsSaving] = useState(false);
 
-// Fetch orders
+  // Fetch orders
   useEffect(() => {
     fetchOrders();
   }, [user.id]);
@@ -113,16 +124,14 @@ export function CustomerDashboard({ user, onLogout, onViewStore }: CustomerDashb
   // ⚡ التحديث اللحظي للزبون: تحديث الطلبات فور تغير حالتها من الإدارة أو وصول إشعار
   useEffect(() => {
     if (!pusherClient || !user?.id) return;
-
-    const channel = pusherClient.subscribe(`user-${user.id}`);
-    
+    const channel = pusherClient.subscribe(`user-${user?.id}`);
     channel.bind("new-notification", () => {
       // تحديث قائمة الطلبات صامتاً في الخلفية عند وصول الإشعار
-      fetchOrders(); 
+      fetchOrders();
     });
 
     return () => {
-      pusherClient.unsubscribe(`user-${user.id}`);
+      pusherClient?.unsubscribe(`user-${user?.id}`);
     };
   }, [user?.id]);
   const fetchOrders = async () => {
@@ -227,9 +236,9 @@ export function CustomerDashboard({ user, onLogout, onViewStore }: CustomerDashb
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">
             <Link href="/products" className="flex items-center gap-2">
-              <img 
-                src="/logo-transparent.jpg" 
-                alt="تَرِفَة" 
+              <img
+                src="/logo-transparent.jpg"
+                alt="تَرِفَة"
                 className="h-10 w-auto object-contain"
               />
             </Link>
@@ -237,8 +246,8 @@ export function CustomerDashboard({ user, onLogout, onViewStore }: CustomerDashb
             <div className="flex items-center gap-3">
               {/* View Store Button */}
               {onViewStore && (
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   size="sm"
                   onClick={onViewStore}
                   className="gap-2 border-[var(--gold)] text-[var(--gold-dark)] hover:bg-[var(--gold)] hover:text-white"
@@ -247,13 +256,23 @@ export function CustomerDashboard({ user, onLogout, onViewStore }: CustomerDashb
                   <span className="hidden sm:inline">المتجر</span>
                 </Button>
               )}
-              
+
               <Link href="/products">
                 <Button className="bg-[var(--gold)] hover:bg-[var(--gold-dark)] gap-2">
                   <ShoppingBag className="h-4 w-4" />
                   <span className="hidden sm:inline">تسوق الآن</span>
                 </Button>
               </Link>
+
+              {/* زر الدردشة الجديد 👈 */}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsChatOpen(true)}
+                className="relative hover:bg-gray-100"
+              >
+                <MessageCircle className="h-5 w-5" />
+              </Button>
               <NotificationBell userId={user.id} />
               <Avatar>
                 <AvatarFallback className="bg-[var(--gold)] text-white">
@@ -386,7 +405,9 @@ export function CustomerDashboard({ user, onLogout, onViewStore }: CustomerDashb
                 {wishlist.itemCount === 0 ? (
                   <div className="text-center py-12">
                     <Heart className="h-16 w-16 mx-auto text-gray-300 mb-4" />
-                    <p className="text-gray-500">لم تضف أي منتجات للمفضلة بعد</p>
+                    <p className="text-gray-500">
+                      لم تضف أي منتجات للمفضلة بعد
+                    </p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -475,7 +496,10 @@ export function CustomerDashboard({ user, onLogout, onViewStore }: CustomerDashb
                       <Input
                         value={profileForm.name}
                         onChange={(e) =>
-                          setProfileForm({ ...profileForm, name: e.target.value })
+                          setProfileForm({
+                            ...profileForm,
+                            name: e.target.value,
+                          })
                         }
                         disabled={!isEditing}
                       />
@@ -497,7 +521,10 @@ export function CustomerDashboard({ user, onLogout, onViewStore }: CustomerDashb
                       <Input
                         value={profileForm.phone}
                         onChange={(e) =>
-                          setProfileForm({ ...profileForm, phone: e.target.value })
+                          setProfileForm({
+                            ...profileForm,
+                            phone: e.target.value,
+                          })
                         }
                         disabled={!isEditing}
                       />
@@ -511,7 +538,10 @@ export function CustomerDashboard({ user, onLogout, onViewStore }: CustomerDashb
                       <Input
                         value={profileForm.address}
                         onChange={(e) =>
-                          setProfileForm({ ...profileForm, address: e.target.value })
+                          setProfileForm({
+                            ...profileForm,
+                            address: e.target.value,
+                          })
                         }
                         disabled={!isEditing}
                         placeholder="المدينة، الحي"
@@ -559,7 +589,10 @@ export function CustomerDashboard({ user, onLogout, onViewStore }: CustomerDashb
       </div>
 
       {/* Order Details Dialog */}
-      <Dialog open={!!selectedOrder} onOpenChange={() => setSelectedOrder(null)}>
+      <Dialog
+        open={!!selectedOrder}
+        onOpenChange={() => setSelectedOrder(null)}
+      >
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>
@@ -585,20 +618,25 @@ export function CustomerDashboard({ user, onLogout, onViewStore }: CustomerDashb
 
               {/* Payment Details Section */}
               <div className="p-4 bg-[var(--gold)]/10 rounded-lg space-y-2 border border-[var(--gold)]/20">
-                <p className="font-medium text-[var(--gold-dark)]">تفاصيل الدفع</p>
+                <p className="font-medium text-[var(--gold-dark)]">
+                  تفاصيل الدفع
+                </p>
                 <div className="text-sm space-y-1">
                   <p>
                     <span className="opacity-70">طريقة الدفع: </span>
-                    {selectedOrder.paymentMethod === 'transfer' ? 'حوالة صرافة' : 'محفظة إلكترونية'}
+                    {selectedOrder.paymentMethod === "transfer"
+                      ? "حوالة صرافة"
+                      : "محفظة إلكترونية"}
                   </p>
 
-                  {selectedOrder.paymentDetails && (
+                  {selectedOrder.paymentDetails &&
                     (() => {
                       try {
-                        const details = typeof selectedOrder.paymentDetails === 'string' 
-                          ? JSON.parse(selectedOrder.paymentDetails) 
-                          : selectedOrder.paymentDetails;
-                        
+                        const details =
+                          typeof selectedOrder.paymentDetails === "string"
+                            ? JSON.parse(selectedOrder.paymentDetails)
+                            : selectedOrder.paymentDetails;
+
                         return (
                           <div className="pt-1 space-y-2">
                             {details.transferNumber && (
@@ -608,15 +646,22 @@ export function CustomerDashboard({ user, onLogout, onViewStore }: CustomerDashb
                             )}
                             {details.wallet && (
                               <p className="font-medium">
-                                المحفظة: {details.wallet === 'jeib' ? 'جيب' : details.wallet === 'kash' ? 'كاش' : 'جوالي'}
+                                المحفظة:{" "}
+                                {details.wallet === "jeib"
+                                  ? "جيب"
+                                  : details.wallet === "kash"
+                                    ? "كاش"
+                                    : "جوالي"}
                               </p>
                             )}
                             {details.proofImage && (
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
+                              <Button
+                                variant="outline"
+                                size="sm"
                                 className="w-full mt-1 bg-white border-[var(--gold)] hover:bg-[var(--gold)] hover:text-white transition-all"
-                                onClick={() => window.open(details.proofImage, '_blank')}
+                                onClick={() =>
+                                  window.open(details.proofImage, "_blank")
+                                }
                               >
                                 <Eye className="h-4 w-4 ml-2" />
                                 فتح صورة الإثبات من السحابة
@@ -627,19 +672,21 @@ export function CustomerDashboard({ user, onLogout, onViewStore }: CustomerDashb
                       } catch (e) {
                         return null;
                       }
-                    })()
-                  )}
+                    })()}
                 </div>
               </div>
               {/* --- إضافة جديدة: قسم مراجعة نص رسالة الواتساب --- */}
               <div className="p-4 bg-blue-50 rounded-lg space-y-2 border border-blue-100 overflow-hidden">
                 <p className="font-black text-blue-900 text-xs flex items-center gap-2">
-                  <FileText className="h-4 w-4" /> مراجعة نص رسالة الطلب المرسلة:
+                  <FileText className="h-4 w-4" /> مراجعة نص رسالة الطلب
+                  المرسلة:
                 </p>
                 <div className="bg-white p-3 rounded border border-blue-100 shadow-inner">
                   <ScrollArea className="h-28 w-full text-[10px] leading-relaxed text-gray-600 font-mono whitespace-pre-wrap overflow-auto">
                     {/* بناء نص الرسالة للعرض فقط لكي يتأكد العميل مما أرسله */}
-                    {`*طلب جديد من متجر تَرِفَة* 🛒\n\n👤 *الاسم:* ${selectedOrder.customer?.name}\n📞 *الهاتف:* ${selectedOrder.phone}\n📍 *العنوان:* ${selectedOrder.address}\n💰 *الإجمالي:* ${formatCurrency(selectedOrder.totalAmount)}`}
+                    {selectedOrder
+                      ? `*طلب جديد من متجر تَرِفَة* 🛒\n\n👤 *الاسم:* ${selectedOrder.customer?.name || "غير معروف"}\n📞 *الهاتف:* ${selectedOrder.phone}\n📍 *العنوان:* ${selectedOrder.address}\n💰 *الإجمالي:* ${formatCurrency(selectedOrder.totalAmount)}`
+                      : "جاري تحميل بيانات الرسالة..."}
                   </ScrollArea>
                 </div>
               </div>
@@ -651,14 +698,17 @@ export function CustomerDashboard({ user, onLogout, onViewStore }: CustomerDashb
                     <AlertCircle className="h-5 w-5" />
                     <span>عذراً، تم رفض إثبات الدفع!</span>
                   </div>
-                  <p className="text-[11px] text-red-600 leading-tight">يبدو أن هناك خطأ في صورة الحوالة أو البيانات. لا تقلق، يمكنك تصحيح ذلك الآن.</p>
-                  <Button 
+                  <p className="text-[11px] text-red-600 leading-tight">
+                    يبدو أن هناك خطأ في صورة الحوالة أو البيانات. لا تقلق، يمكنك
+                    تصحيح ذلك الآن.
+                  </p>
+                  <Button
                     className="w-full bg-red-600 hover:bg-red-700 text-white font-black gap-2 h-11 shadow-lg"
                     onClick={() => {
                       setOrderToReupload(selectedOrder); // 👈 قمنا بتغييرها إلى الدالة الصحيحة
-                      setSelectedOrder(null); 
+                      setSelectedOrder(null);
                       setTimeout(() => {
-                        setIsReuploadOpen(true); 
+                        setIsReuploadOpen(true);
                       }, 300);
                     }}
                   >
@@ -679,7 +729,9 @@ export function CustomerDashboard({ user, onLogout, onViewStore }: CustomerDashb
                       className="w-12 h-12 rounded object-cover"
                     />
                     <div className="flex-1">
-                      <p className="font-medium text-sm">{item.product.nameAr}</p>
+                      <p className="font-medium text-sm">
+                        {item.product.nameAr}
+                      </p>
                       <p className="text-xs text-gray-500">
                         {item.price.toLocaleString()} ر.ي × {item.quantity}
                       </p>
@@ -703,6 +755,15 @@ export function CustomerDashboard({ user, onLogout, onViewStore }: CustomerDashb
           )}
         </DialogContent>
       </Dialog>
+
+      {/* نافذة الدردشة الموحدة للعميل */}
+      <Dialog open={isChatOpen} onOpenChange={setIsChatOpen}>
+        <DialogContent className="max-w-5xl h-[90vh] p-0 overflow-hidden border-none shadow-2xl rounded-3xl bg-white">
+          {/* استدعاء الواجهة مع تمرير معرف العميل وتحديد دوره كـ CUSTOMER 👈 */}
+          <AgentInbox agentId={user.id} agentRole="CUSTOMER" />
+        </DialogContent>
+      </Dialog>
+
       {/* --- إضافة نافذة إعادة رفع إثبات الدفع المستقلة --- */}
       <ReuploadProofDialog
         isOpen={isReuploadOpen}

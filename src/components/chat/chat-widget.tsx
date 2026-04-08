@@ -23,7 +23,7 @@ import {
   Sparkles,
   Clock,
   Wifi,
-  WifiOff
+  WifiOff,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -78,7 +78,13 @@ interface ChatWidgetProps {
   targetAgentId?: string;
 }
 
-export function ChatWidget({ userId, userName, userRole, productId, targetAgentId }: ChatWidgetProps) {
+export function ChatWidget({
+  userId,
+  userName,
+  userRole,
+  productId,
+  targetAgentId,
+}: ChatWidgetProps) {
   // State
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
@@ -89,19 +95,24 @@ export function ChatWidget({ userId, userName, userRole, productId, targetAgentI
   const [isSending, setIsSending] = useState(false);
   const [conversation, setConversation] = useState<Conversation | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [view, setView] = useState<'contacts' | 'chat'>('contacts');
+  const [view, setView] = useState<"contacts" | "chat">("contacts");
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [connectionError, setConnectionError] = useState<string | null>(null);
-  
+
   // Refs
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  
+
   // Constants
-  const isGuest = !userId || userId === '' || userId === 'guest';
+  const isGuest = !userId || userId === "" || userId === "guest";
   const currentUserId = userId;
+  // إخفاء النافذة العائمة تماماً عن الإدارة والتجار والمندوبين
+  // لأن لديهم صندوق وارد خاص بهم في لوحة التحكم
+  if (userRole === "ADMIN" || userRole === "AGENT" || userRole === "MERCHANT") {
+    return null;
+  }
 
   // Auto scroll to bottom
   useEffect(() => {
@@ -110,21 +121,44 @@ export function ChatWidget({ userId, userName, userRole, productId, targetAgentI
 
   // Auto focus input when chat opens
   useEffect(() => {
-    if (isOpen && view === 'chat' && inputRef.current) {
+    if (isOpen && view === "chat" && inputRef.current) {
       setTimeout(() => inputRef.current?.focus(), 100);
     }
   }, [isOpen, view]);
 
-  // Auto start chat with target agent (for product inquiry)
+  // ✅ رادار التقاط حدث النقر على زر "استفسار" من صفحة المنتج
   useEffect(() => {
-    if (isOpen && productId && targetAgentId && view === 'contacts' && !isGuest) {
-      startChatWith(targetAgentId);
-    }
-  }, [isOpen, productId, targetAgentId, view, isGuest]);
+    const handleStartInquiry = () => {
+      if (isGuest) {
+        toast({
+          title: "تسجيل الدخول مطلوب",
+          description: "يرجى تسجيل الدخول للاستفسار عن المنتج",
+          variant: "destructive",
+        });
+        setIsOpen(false);
+        window.location.href = "/?auth=login";
+        return;
+      }
+
+      // 1. افتح النافذة
+      setIsOpen(true);
+
+      // 2. ابدأ المحادثة وأرسل رسالة المنتج (بعد فتح النافذة بلحظة)
+      if (targetAgentId) {
+        setTimeout(() => {
+          startChatWith(targetAgentId);
+        }, 100);
+      }
+    };
+
+    window.addEventListener("start-inquiry", handleStartInquiry);
+    return () =>
+      window.removeEventListener("start-inquiry", handleStartInquiry);
+  }, [targetAgentId, isGuest]);
 
   // Fetch contacts when chat opens
   useEffect(() => {
-    if (!isOpen || view !== 'contacts' || isGuest) return;
+    if (!isOpen || view !== "contacts" || isGuest) return;
 
     const fetchContacts = async () => {
       setIsLoading(true);
@@ -134,22 +168,24 @@ export function ChatWidget({ userId, userName, userRole, productId, targetAgentI
         if (!token) {
           throw new Error("لا يوجد توكن للمستخدم");
         }
-        
+
         const response = await fetch("/api/chat/contacts", {
           headers: {
-            "Authorization": `Bearer ${token}`,
-            "Content-Type": "application/json"
-          }
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
         });
-        
+
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}`);
         }
-        
+
         const data = await response.json();
-        // Remove duplicates using Map
-        const uniqueContacts = Array.from(
-          new Map((data.contacts || []).map((c: Contact) => [c.id, c])).values()
+        // Remove duplicates using Map (تم حل مشكلة TypeScript بتعريف النوع صراحة)
+        const uniqueContacts: Contact[] = Array.from(
+          new Map<string, Contact>(
+            (data.contacts || []).map((c: Contact) => [c.id, c]),
+          ).values(),
         );
         setContacts(uniqueContacts);
       } catch (error) {
@@ -170,7 +206,7 @@ export function ChatWidget({ userId, userName, userRole, productId, targetAgentI
 
   // Pusher connection for real-time messages
   useEffect(() => {
-    if (!conversation?.id || !isOpen || view !== 'chat') return;
+    if (!conversation?.id || !isOpen || view !== "chat") return;
 
     let mounted = true;
     let retryCount = 0;
@@ -181,37 +217,46 @@ export function ChatWidget({ userId, userName, userRole, productId, targetAgentI
         if (!pusherClient) {
           throw new Error("Pusher client not initialized");
         }
-        
+
         const channel = pusherClient.subscribe(conversation.id);
-        
+
         channel.bind("new-message", (newMessage: Message) => {
           if (!mounted) return;
+
+          // ✅ فلتر الحماية (السر البرمجي لمنع التكرار نهائياً):
+          // إذا كانت الرسالة القادمة من البوشر هي رسالتك أنت، تجاهلها!
+          // لأن دالة الإرسال قد قامت بالفعل بوضعها في شاشتك بذكاء
+          if (newMessage.senderId === currentUserId) {
+            return;
+          }
+
           setMessages((prev) => {
             if (prev.find((m) => m.id === newMessage.id)) return prev;
             return [...prev, newMessage];
           });
+
           // Mark as read if needed
           if (newMessage.senderId !== currentUserId) {
             //markMessageAsRead(newMessage.id);
           }
         });
-        
+
         channel.bind("message-read", (data: { messageId: string }) => {
           if (!mounted) return;
           setMessages((prev) =>
             prev.map((msg) =>
-              msg.id === data.messageId ? { ...msg, isRead: true } : msg
-            )
+              msg.id === data.messageId ? { ...msg, isRead: true } : msg,
+            ),
           );
         });
-        
+
         channel.bind("pusher:subscription_succeeded", () => {
           if (mounted) {
             setIsConnected(true);
             setConnectionError(null);
           }
         });
-        
+
         channel.bind("pusher:subscription_error", (error: any) => {
           console.error("Pusher subscription error:", error);
           if (mounted) {
@@ -219,7 +264,7 @@ export function ChatWidget({ userId, userName, userRole, productId, targetAgentI
             setConnectionError("انقطع الاتصال، جاري إعادة المحاولة...");
           }
         });
-        
+
         return channel;
       } catch (error) {
         console.error("Pusher setup error:", error);
@@ -230,9 +275,9 @@ export function ChatWidget({ userId, userName, userRole, productId, targetAgentI
         return null;
       }
     };
-    
+
     let channel = setupPusher();
-    
+
     // Auto-reconnect logic
     const reconnectInterval = setInterval(() => {
       if (!isConnected && mounted && retryCount < maxRetries) {
@@ -264,7 +309,7 @@ export function ChatWidget({ userId, userName, userRole, productId, targetAgentI
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ messageId, conversationId: conversation?.id }),
       });
@@ -285,7 +330,7 @@ export function ChatWidget({ userId, userName, userRole, productId, targetAgentI
       window.location.href = "/?auth=login";
       return;
     }
-    
+
     setIsLoading(true);
     setConnectionError(null);
     try {
@@ -293,28 +338,28 @@ export function ChatWidget({ userId, userName, userRole, productId, targetAgentI
       if (!token) {
         throw new Error("لا يوجد توكن");
       }
-      
+
       const response = await fetch("/api/chat/conversation", {
         method: "POST",
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ 
-          customerId: currentUserId, 
+        body: JSON.stringify({
+          customerId: currentUserId,
           agentId: contactId,
-          productId: productId
+          productId: productId,
         }),
       });
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
       }
-      
+
       const data = await response.json();
       setConversation(data.conversation);
       setMessages(data.conversation?.messages || []);
-      setView('chat');
+      setView("chat");
     } catch (error) {
       console.error("خطأ في بدء المحادثة:", error);
       setConnectionError("فشل في بدء المحادثة");
@@ -328,78 +373,85 @@ export function ChatWidget({ userId, userName, userRole, productId, targetAgentI
     }
   };
 
-  // Send message
+  // Send message (تم التحديث لمنع تكرار الرسالة عند العميل باستخدام socket_id)
   const handleSendMessage = async () => {
-      if (isSending) return;
-      if (!message.trim() || !conversation?.id || !currentUserId) return;
+    if (isSending) return;
+    if (!message.trim() || !conversation?.id || !currentUserId) return;
 
-      const content = message.trim();
-      const tempId = `temp-${Date.now()}-${Math.random()}`;
-  
-      // Add temporary message
-      const tempMessage: Message = {
-        id: tempId,
-        senderId: currentUserId,
-        senderName: userName,
-        senderRole: userRole,
-        content: content,
-        createdAt: new Date(),
-        isRead: false,
-        isTemp: true,
-      };
+    const content = message.trim();
+    const tempId = `temp-${Date.now()}-${Math.random()}`;
 
-      setMessage("");
-      setMessages((prev) => [...prev, tempMessage]);
-      setIsSending(true);  // ← هذه السطر المضاف
-  
-      // Clear typing indicator
-      if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current);
+    // Add temporary message
+    const tempMessage: Message = {
+      id: tempId,
+      senderId: currentUserId,
+      senderName: userName,
+      senderRole: userRole,
+      content: content,
+      createdAt: new Date(),
+      isRead: false,
+      isTemp: true,
+    };
+
+    setMessage("");
+    setMessages((prev) => [...prev, tempMessage]);
+    setIsSending(true); // ← هذه السطر المضاف
+
+    // Clear typing indicator
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+
+    try {
+      const token = localStorage.getItem("token");
+
+      // ✅ استخراج رقم الجلسة من Pusher لمنع تكرار الرسالة عند العميل (تأثير الصدى)
+      const currentSocketId = pusherClient?.connection?.socket_id;
+
+      const response = await fetch("/api/chat/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          conversationId: conversation.id,
+          senderId: currentUserId,
+          content: content,
+          socketId: currentSocketId, // ✅ إرسال رقم الجلسة للسيرفر
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to send");
       }
 
-      try {
-        const token = localStorage.getItem("token");
-        const response = await fetch("/api/chat/messages", {
-          method: "POST",
-          headers: { 
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            conversationId: conversation.id,
-            senderId: currentUserId,
-            content: content,
-          }),
-        });
+      const savedMessage = await response.json();
 
-        if (!response.ok) {
-          throw new Error("Failed to send");
-        }
-
-        const savedMessage = await response.json();
-    
-        // Replace temp message with saved one
-        setMessages((prev) => 
-          prev.map(msg => msg.id === tempId ? savedMessage.message : msg)
-        );
-      } catch (error) {
-        console.error("خطأ في الإرسال:", error);
-        // Mark message as error
-        setMessages((prev) => 
-          prev.map(msg => 
-            msg.id === tempId ? { ...msg, error: true, content: `${content} (لم ترسل)` } : msg
-          )
-        );
-        toast({
-          title: "خطأ",
-          description: "فشل في إرسال الرسالة",
-          variant: "destructive",
-        });
-        // Restore message to input
-        setMessage(content);
-      } finally {
-        setIsSending(false);  // ← هذه السطر المضاف
-      }
+      // Replace temp message with saved one
+      setMessages((prev) =>
+        prev.map((msg) => (msg.id === tempId ? savedMessage.message : msg)),
+      );
+    } catch (error) {
+      console.error("خطأ في الإرسال:", error);
+      // Mark message as error
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === tempId
+            ? { ...msg, error: true, content: `${content} (لم ترسل)` }
+            : msg,
+        ),
+      );
+      toast({
+        title: "خطأ",
+        description: "فشل في إرسال الرسالة",
+        variant: "destructive",
+      });
+      // Restore message to input
+      setMessage(content);
+    } finally {
+      setIsSending(false); // ← هذه السطر المضاف
+    }
   };
 
   // Handle typing indicator
@@ -407,22 +459,22 @@ export function ChatWidget({ userId, userName, userRole, productId, targetAgentI
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
     }
-    
+
     // Send typing event via Pusher
     if (conversation?.id && isConnected) {
       const channel = pusherClient?.subscribe(conversation.id);
       channel?.trigger("client-typing", {
         userId: currentUserId,
-        isTyping: true
+        isTyping: true,
       });
     }
-    
+
     typingTimeoutRef.current = setTimeout(() => {
       if (conversation?.id && isConnected) {
         const channel = pusherClient?.subscribe(conversation.id);
         channel?.trigger("client-typing", {
           userId: currentUserId,
-          isTyping: false
+          isTyping: false,
         });
       }
     }, 1000);
@@ -443,13 +495,15 @@ export function ChatWidget({ userId, userName, userRole, productId, targetAgentI
   };
 
   // Filter contacts by search
-  const filteredContacts = contacts.filter(contact =>
-    contact.name.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredContacts = contacts.filter((contact) =>
+    contact.name.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   // Chat button (when closed)
   if (!isOpen) {
-    const unreadCount = messages.filter(m => !m.isRead && m.senderId !== currentUserId).length;
+    const unreadCount = messages.filter(
+      (m) => !m.isRead && m.senderId !== currentUserId,
+    ).length;
     return (
       <motion.button
         initial={{ scale: 0, opacity: 0 }}
@@ -475,14 +529,13 @@ export function ChatWidget({ userId, userName, userRole, productId, targetAgentI
               animate={{ scale: 1 }}
               className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full text-[10px] font-bold flex items-center justify-center text-white shadow-lg"
             >
-              {unreadCount > 9 ? '9+' : unreadCount}
+              {unreadCount > 9 ? "9+" : unreadCount}
             </motion.div>
           )}
         </div>
       </motion.button>
     );
   }
-    
 
   // Main chat window
   return (
@@ -492,19 +545,21 @@ export function ChatWidget({ userId, userName, userRole, productId, targetAgentI
       exit={{ opacity: 0, y: 50, scale: 0.9 }}
       transition={{ type: "spring", damping: 25, stiffness: 300 }}
       className={`fixed bottom-6 left-6 z-[60] bg-white rounded-3xl shadow-2xl overflow-hidden transition-all duration-300 ${
-        isMinimized ? "w-80 h-14" : "w-[calc(100vw-2rem)] sm:w-96 md:w-[28rem] h-[600px] max-h-[calc(100vh-3rem)]"
+        isMinimized
+          ? "w-80 h-14"
+          : "w-[calc(100vw-2rem)] sm:w-96 md:w-[28rem] h-[600px] max-h-[calc(100vh-3rem)]"
       }`}
     >
       {/* Header */}
       <div className="bg-gradient-to-r from-[#C9A962] to-[#B8956E] text-white px-5 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3 flex-1 min-w-0">
-          {view === 'chat' && (
+          {view === "chat" && (
             <Button
               variant="ghost"
               size="icon"
               className="h-8 w-8 text-white hover:bg-white/20 rounded-full shrink-0"
               onClick={() => {
-                setView('contacts');
+                setView("contacts");
                 setConversation(null);
                 setMessages([]);
               }}
@@ -516,7 +571,7 @@ export function ChatWidget({ userId, userName, userRole, productId, targetAgentI
             <div className="absolute inset-0 bg-gradient-to-r from-white/30 to-transparent rounded-full blur" />
             <Avatar className="w-10 h-10 ring-2 ring-white/30 shrink-0">
               <AvatarFallback className="bg-white/20 text-white font-bold text-lg">
-                {view === 'contacts' ? (
+                {view === "contacts" ? (
                   <User className="h-5 w-5" />
                 ) : (
                   <Headphones className="h-5 w-5" />
@@ -526,16 +581,22 @@ export function ChatWidget({ userId, userName, userRole, productId, targetAgentI
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="font-bold text-base truncate">
-              {view === 'contacts' ? 'المراسلة المباشرة' : conversation?.agentName || 'المحادثة'}
+              {view === "contacts"
+                ? "المراسلة المباشرة"
+                : conversation?.agentName || "المحادثة"}
             </h3>
-            {view === 'chat' && (
+            {view === "chat" && (
               <div className="flex items-center gap-1.5 mt-0.5">
-                <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-400 animate-pulse' : 'bg-red-400'}`} />
+                <div
+                  className={`w-2 h-2 rounded-full ${isConnected ? "bg-green-400 animate-pulse" : "bg-red-400"}`}
+                />
                 <p className="text-xs text-white/80">
                   {isConnected ? "متصل الآن" : "غير متصل"}
                 </p>
                 {connectionError && (
-                  <p className="text-xs text-yellow-200 truncate">{connectionError}</p>
+                  <p className="text-xs text-yellow-200 truncate">
+                    {connectionError}
+                  </p>
                 )}
               </div>
             )}
@@ -548,7 +609,11 @@ export function ChatWidget({ userId, userName, userRole, productId, targetAgentI
             className="h-8 w-8 text-white hover:bg-white/20 rounded-full"
             onClick={() => setIsMinimized(!isMinimized)}
           >
-            {isMinimized ? <Maximize2 className="h-4 w-4" /> : <Minimize2 className="h-4 w-4" />}
+            {isMinimized ? (
+              <Maximize2 className="h-4 w-4" />
+            ) : (
+              <Minimize2 className="h-4 w-4" />
+            )}
           </Button>
           <Button
             variant="ghost"
@@ -574,7 +639,7 @@ export function ChatWidget({ userId, userName, userRole, productId, targetAgentI
               </motion.div>
               <p className="text-[#8B7355] mt-3 text-sm">جاري التحميل...</p>
             </div>
-          ) : view === 'contacts' ? (
+          ) : view === "contacts" ? (
             // Contacts View
             <div className="flex flex-col h-[520px] bg-gradient-to-b from-[#FAF7F2] to-white">
               {/* Guest View */}
@@ -588,9 +653,12 @@ export function ChatWidget({ userId, userName, userRole, productId, targetAgentI
                   >
                     <MessageCircle className="h-12 w-12 text-[#C9A962]" />
                   </motion.div>
-                  <h3 className="text-xl font-bold text-[#3D3021] mb-2">مرحباً بك! 💬</h3>
+                  <h3 className="text-xl font-bold text-[#3D3021] mb-2">
+                    مرحباً بك! 💬
+                  </h3>
                   <p className="text-sm text-[#8B7355] mb-6 leading-relaxed">
-                    للتواصل مع خدمة العملاء والاستفسار عن المنتجات، يرجى تسجيل الدخول أولاً
+                    للتواصل مع خدمة العملاء والاستفسار عن المنتجات، يرجى تسجيل
+                    الدخول أولاً
                   </p>
                   <Button
                     onClick={() => {
@@ -617,7 +685,7 @@ export function ChatWidget({ userId, userName, userRole, productId, targetAgentI
                       />
                     </div>
                   </div>
-                  
+
                   <ScrollArea className="flex-1 p-4">
                     {filteredContacts.length === 0 ? (
                       <div className="text-center py-12">
@@ -625,7 +693,9 @@ export function ChatWidget({ userId, userName, userRole, productId, targetAgentI
                           <User className="h-8 w-8 text-gray-300" />
                         </div>
                         <p className="text-[#8B7355] text-sm">
-                          {searchTerm ? "لا توجد نتائج للبحث" : "لا يوجد موظفين متاحين حالياً"}
+                          {searchTerm
+                            ? "لا توجد نتائج للبحث"
+                            : "لا يوجد موظفين متاحين حالياً"}
                         </p>
                       </div>
                     ) : (
@@ -648,11 +718,17 @@ export function ChatWidget({ userId, userName, userRole, productId, targetAgentI
                               <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-white" />
                             </div>
                             <div className="flex-1 text-right">
-                              <h4 className="font-bold text-[#3D3021] text-base">{contact.name}</h4>
+                              <h4 className="font-bold text-[#3D3021] text-base">
+                                {contact.name}
+                              </h4>
                               <p className="text-xs text-[#8B7355] mt-0.5">
-                                {contact.role === 'ADMIN' ? 'الإدارة' : 
-                                 contact.role === 'AGENT' ? 'دعم فني' : 
-                                 contact.role === 'MERCHANT' ? 'تاجر معتمد' : 'موظف'}
+                                {contact.role === "ADMIN"
+                                  ? "الإدارة"
+                                  : contact.role === "AGENT"
+                                    ? "دعم فني"
+                                    : contact.role === "MERCHANT"
+                                      ? "تاجر معتمد"
+                                      : "موظف"}
                               </p>
                             </div>
                             <div className="w-10 h-10 rounded-full bg-[#C9A962]/10 flex items-center justify-center shrink-0 group-hover:bg-[#C9A962] group-hover:text-white transition-all duration-300">
@@ -681,8 +757,12 @@ export function ChatWidget({ userId, userName, userRole, productId, targetAgentI
                     >
                       <MessageCircle className="h-10 w-10 text-[#C9A962]" />
                     </motion.div>
-                    <p className="text-[#3D3021] font-medium mb-1">ابدأ المحادثة</p>
-                    <p className="text-xs text-[#8B7355]">نحن هنا لمساعدتك! 💬</p>
+                    <p className="text-[#3D3021] font-medium mb-1">
+                      ابدأ المحادثة
+                    </p>
+                    <p className="text-xs text-[#8B7355]">
+                      نحن هنا لمساعدتك! 💬
+                    </p>
                   </div>
                 ) : (
                   <div className="space-y-3">
@@ -695,20 +775,26 @@ export function ChatWidget({ userId, userName, userRole, productId, targetAgentI
                             initial={{ opacity: 0, y: 20, scale: 0.9 }}
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, scale: 0.9 }}
-                            className={`flex ${isOwn ? "justify-start" : "justify-end"}`}
+                            className={`flex group ${isOwn ? "justify-end" : "justify-start"}`}
                           >
                             <div
                               className={`max-w-[85%] rounded-2xl px-4 py-2.5 ${
                                 isOwn
-                                  ? "bg-gradient-to-r from-[#C9A962] to-[#B8956E] text-white rounded-bl-none"
-                                  : "bg-white shadow-md border border-[#E8E0D8] rounded-br-none"
+                                  ? "bg-gradient-to-r from-[#C9A962] to-[#B8956E] text-white rounded-bl-none shadow-md"
+                                  : "bg-white shadow-sm border border-[#E8E0D8] rounded-br-none"
                               } ${msg.error ? "opacity-70" : ""}`}
                             >
-                              <p className={`text-sm break-words ${msg.error ? "line-through" : ""}`}>
+                              <p
+                                className={`text-sm break-words ${msg.error ? "line-through" : ""}`}
+                              >
                                 {msg.content}
                               </p>
-                              <div className={`flex items-center gap-1 mt-1 ${isOwn ? "justify-end" : "justify-start"}`}>
-                                <p className={`text-[10px] ${isOwn ? "text-white/60" : "text-gray-400"}`}>
+                              <div
+                                className={`flex items-center gap-1 mt-1 ${isOwn ? "justify-start" : "justify-end"}`}
+                              >
+                                <p
+                                  className={`text-[10px] ${isOwn ? "text-white/60" : "text-gray-400"}`}
+                                >
                                   {formatTime(msg.createdAt)}
                                 </p>
                                 {isOwn && getMessageStatus(msg)}
@@ -718,7 +804,7 @@ export function ChatWidget({ userId, userName, userRole, productId, targetAgentI
                         );
                       })}
                     </AnimatePresence>
-                    
+
                     {/* Typing indicator */}
                     {isTyping && (
                       <motion.div
@@ -728,14 +814,23 @@ export function ChatWidget({ userId, userName, userRole, productId, targetAgentI
                       >
                         <div className="bg-white rounded-2xl px-4 py-3 shadow-md border border-[#E8E0D8]">
                           <div className="flex gap-1">
-                            <span className="w-2 h-2 bg-[#C9A962] rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-                            <span className="w-2 h-2 bg-[#C9A962] rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-                            <span className="w-2 h-2 bg-[#C9A962] rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+                            <span
+                              className="w-2 h-2 bg-[#C9A962] rounded-full animate-bounce"
+                              style={{ animationDelay: "0ms" }}
+                            />
+                            <span
+                              className="w-2 h-2 bg-[#C9A962] rounded-full animate-bounce"
+                              style={{ animationDelay: "150ms" }}
+                            />
+                            <span
+                              className="w-2 h-2 bg-[#C9A962] rounded-full animate-bounce"
+                              style={{ animationDelay: "300ms" }}
+                            />
                           </div>
                         </div>
                       </motion.div>
                     )}
-                    
+
                     <div ref={messagesEndRef} />
                   </div>
                 )}

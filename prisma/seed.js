@@ -1,40 +1,42 @@
 // Seed script to create admin user and sample data
 const { PrismaClient } = require("@prisma/client");
-const crypto = require("crypto");
+const bcrypt = require("bcryptjs");
 
 const prisma = new PrismaClient();
 
-// Hash password function using Node.js crypto
+// Hash password function using Node.js bcrypt
 function hashPassword(password) {
-  const salt = crypto.randomBytes(16).toString("hex");
-  const hash = crypto.createHash("sha256").update(password + salt).digest("hex");
-  return `${salt}:${hash}`;
+  // الرقم 10 هو قوة التشفير (Salt Rounds) وهو المعيار العالمي
+  return bcrypt.hashSync(password, 10);
 }
 
 async function main() {
-  console.log("🌱 Seeding database...");
+  console.log("🌱 Seeding database for Tarifa Yemen...");
 
-  // Create admin user
-  const adminPassword = hashPassword("admin123");
+  // 1. تحديد كلمة المرور وتشفيرها بشكل ثابت
+  const plainPassword = "admin123";
+  const adminPassword = hashPassword(plainPassword);
+
+  // 2. إنشاء أو تحديث حساب المدير
   const admin = await prisma.user.upsert({
     where: { email: "admin@tarifa.com" },
     update: {
-      password: adminPassword,
+      password: adminPassword, // تحديث كلمة المرور في حال كان الحساب موجوداً
     },
     create: {
       email: "admin@tarifa.com",
       name: "جلال - الإدارة",
       password: adminPassword,
       phone: "0500000000",
-      address: "الرياض، السعودية",
+      address: "صنعاء، اليمن",
       role: "ADMIN",
       isVerified: true,
       isActive: true,
     },
   });
-  console.log("✅ Admin user created:", admin.email);
+  console.log("✅ Admin user created/updated:", admin.email);
 
-  // Create categories
+  // 3. إنشاء التصنيفات
   const categories = await Promise.all([
     prisma.category.upsert({
       where: { slug: "perfumes" },
@@ -43,7 +45,8 @@ async function main() {
         name: "Perfumes",
         nameAr: "عطور",
         slug: "perfumes",
-        image: "https://images.unsplash.com/photo-1541643600914-78b084683601?w=400",
+        image:
+          "https://images.unsplash.com/photo-1541643600914-78b084683601?w=400",
       },
     }),
     prisma.category.upsert({
@@ -53,7 +56,8 @@ async function main() {
         name: "Makeup",
         nameAr: "مكياج",
         slug: "makeup",
-        image: "https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=400",
+        image:
+          "https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=400",
       },
     }),
     prisma.category.upsert({
@@ -63,7 +67,8 @@ async function main() {
         name: "Accessories",
         nameAr: "أكسسوارات",
         slug: "accessories",
-        image: "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=400",
+        image:
+          "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=400",
       },
     }),
     prisma.category.upsert({
@@ -73,17 +78,17 @@ async function main() {
         name: "Skincare",
         nameAr: "عناية",
         slug: "skincare",
-        image: "https://images.unsplash.com/photo-1556228720-195a672e8a03?w=400",
+        image:
+          "https://images.unsplash.com/photo-1556228720-195a672e8a03?w=400",
       },
     }),
   ]);
   console.log("✅ Categories created:", categories.length);
 
-  // Check if products exist
+  // 4. التحقق من وجود المنتجات وإنشاؤها
   const existingProducts = await prisma.product.count();
-  
+
   if (existingProducts === 0) {
-    // Create sample products
     const products = [
       {
         name: "Golden Night Perfume",
@@ -92,8 +97,11 @@ async function main() {
         descriptionAr: "عطر فاخر للمناسبات الخاصة",
         price: 299,
         originalPrice: 450,
-        mainImage: "https://images.unsplash.com/photo-1541643600914-78b084683601?w=400",
-        images: JSON.stringify(["https://images.unsplash.com/photo-1541643600914-78b084683601?w=400"]),
+        mainImage:
+          "https://images.unsplash.com/photo-1541643600914-78b084683601?w=400",
+        images: JSON.stringify([
+          "https://images.unsplash.com/photo-1541643600914-78b084683601?w=400",
+        ]),
         stock: 50,
         categoryId: categories[0].id,
         isFeatured: true,
@@ -106,8 +114,11 @@ async function main() {
         descriptionAr: "لوحة ظلال عيون احترافية بـ 24 لون",
         price: 189,
         originalPrice: 250,
-        mainImage: "https://images.unsplash.com/photo-1512496015851-a90fb38ba796?w=400",
-        images: JSON.stringify(["https://images.unsplash.com/photo-1512496015851-a90fb38ba796?w=400"]),
+        mainImage:
+          "https://images.unsplash.com/photo-1512496015851-a90fb38ba796?w=400",
+        images: JSON.stringify([
+          "https://images.unsplash.com/photo-1512496015851-a90fb38ba796?w=400",
+        ]),
         stock: 30,
         categoryId: categories[1].id,
         isFeatured: true,
@@ -120,8 +131,11 @@ async function main() {
         descriptionAr: "قلادة لؤلؤ أنيقة لجمال خالد",
         price: 599,
         originalPrice: 800,
-        mainImage: "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=400",
-        images: JSON.stringify(["https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=400"]),
+        mainImage:
+          "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=400",
+        images: JSON.stringify([
+          "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=400",
+        ]),
         stock: 15,
         categoryId: categories[2].id,
         isFeatured: true,
@@ -134,8 +148,11 @@ async function main() {
         descriptionAr: "سيروم فيتامين سي مركز لبشرة مشرقة",
         price: 149,
         originalPrice: 199,
-        mainImage: "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=400",
-        images: JSON.stringify(["https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=400"]),
+        mainImage:
+          "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=400",
+        images: JSON.stringify([
+          "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=400",
+        ]),
         stock: 100,
         categoryId: categories[3].id,
         isFeatured: true,
@@ -148,8 +165,11 @@ async function main() {
         descriptionAr: "روج مات طويل الأمد بألوان متعددة",
         price: 89,
         originalPrice: 120,
-        mainImage: "https://images.unsplash.com/photo-1586495777744-4413f21062fa?w=400",
-        images: JSON.stringify(["https://images.unsplash.com/photo-1586495777744-4413f21062fa?w=400"]),
+        mainImage:
+          "https://images.unsplash.com/photo-1586495777744-4413f21062fa?w=400",
+        images: JSON.stringify([
+          "https://images.unsplash.com/photo-1586495777744-4413f21062fa?w=400",
+        ]),
         stock: 200,
         categoryId: categories[1].id,
         isFeatured: true,
@@ -162,8 +182,11 @@ async function main() {
         descriptionAr: "ساعة يد عصرية للمرأة العصرية",
         price: 450,
         originalPrice: 600,
-        mainImage: "https://images.unsplash.com/photo-1524592094714-0f0654e20314?w=400",
-        images: JSON.stringify(["https://images.unsplash.com/photo-1524592094714-0f0654e20314?w=400"]),
+        mainImage:
+          "https://images.unsplash.com/photo-1524592094714-0f0654e20314?w=400",
+        images: JSON.stringify([
+          "https://images.unsplash.com/photo-1524592094714-0f0654e20314?w=400",
+        ]),
         stock: 25,
         categoryId: categories[2].id,
         isFeatured: true,
@@ -176,13 +199,13 @@ async function main() {
     });
     console.log("✅ Products created:", products.length);
   } else {
-    console.log("✅ Products already exist, skipping...");
+    console.log("ℹ️ Products already exist, skipping creation.");
   }
 
   console.log("\n🎉 Seeding completed!");
-  console.log("\n📋 Admin Login Credentials:");
+  console.log("\n📋 Admin Login Credentials (STABLE):");
   console.log("   Email: admin@tarifa.com");
-  console.log("   Password: admin123");
+  console.log("   Password: " + plainPassword);
 }
 
 main()
