@@ -63,7 +63,7 @@ export const checkPasswordStrength = validatePassword;
 
 export function sanitizeObject<T>(obj: T): T {
   const o: any = {};
-  for (const [k, v] of Object.entries(obj)) {
+  for (const [k, v] of Object.entries(obj as any)) {
     if (typeof v === "string") o[k] = sanitizeInput(v);
     else if (typeof v === "object" && v !== null && !Array.isArray(v))
       o[k] = sanitizeObject(v as any);
@@ -151,7 +151,7 @@ export async function verifyPassword(
 // ==================== JWT TOKENS ====================
 export function generateAccessToken(payload: any): string {
   return jwt.sign(payload, getJWTSecret(), {
-    expiresIn: process.env.JWT_ACCESS_EXPIRES_IN || "15m",
+    expiresIn: (process.env.JWT_ACCESS_EXPIRES_IN || "15m") as any,
     issuer: "tarifa-store",
   });
 }
@@ -167,6 +167,40 @@ export function verifyToken(token: string): { valid: boolean; payload?: any } {
     return { valid: true, payload: jwt.verify(token, getJWTSecret()) };
   } catch {
     return { valid: false };
+  }
+}
+
+// ==================== AUTHENTICATION WRAPPER ====================
+/**
+ * ✅ دالة وسيطة للتحقق من الهوية من خلال طلبات الـ API
+ * تستخرج التوكن وتتأكد من صلاحيته لفتح الأبواب للمديرين والتجار
+ */
+export async function verifyAuth(req: Request) {
+  try {
+    // 1. استخراج التوكن من رأس الطلب (Authorization Header)
+    const authHeader = req.headers.get("authorization");
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return null;
+    }
+
+    const token = authHeader.split(" ")[1];
+
+    // 2. استخدام دالة التحقق الموجودة في ملفك
+    const { valid, payload } = verifyToken(token);
+
+    if (!valid || !payload) {
+      return null;
+    }
+
+    // 3. إعادة بيانات المستخدم (المعرف، البريد، الرتبة)
+    return payload;
+  } catch (error) {
+    logSecurityEvent({
+      action: "VERIFY_AUTH_ERROR",
+      status: "FAILURE",
+      details: String(error),
+    });
+    return null;
   }
 }
 
