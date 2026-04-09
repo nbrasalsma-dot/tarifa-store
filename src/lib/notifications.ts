@@ -3,21 +3,26 @@ import { pusherServer } from "./pusher";
 import { NotificationType } from "@prisma/client"; // استيراد الأنواع من Prisma
 
 // دالة مساعدة داخلية لإرسال الإشعار المنبثق عبر الـ API
+// الدالة بعد التعديل الجراحي
 async function triggerWebPush(userId: string, title: string, message: string) {
   try {
-    await fetch(
-      `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/api/web-push/send`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId,
-          title,
-          message,
-          url: "/notifications",
-        }),
-      },
-    );
+    // استخدمنا رابط الموقع الحقيقي من متغيرات البيئة أو الرابط الافتراضي
+    const baseUrl =
+      process.env.NEXT_PUBLIC_APP_URL ||
+      (process.env.VERCEL_URL
+        ? `https://${process.env.VERCEL_URL}`
+        : "http://localhost:3000");
+
+    await fetch(`${baseUrl}/api/web-push/send`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userId,
+        title,
+        message,
+        url: "/notifications",
+      }),
+    });
   } catch (err) {
     console.error("⚠️ فشل إرسال الـ Web Push:", err);
   }
