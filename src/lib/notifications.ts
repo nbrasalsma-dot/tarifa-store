@@ -2,7 +2,26 @@ import { db } from "./db";
 import { pusherServer } from "./pusher";
 import { NotificationType } from "@prisma/client"; // استيراد الأنواع من Prisma
 
-
+// دالة مساعدة داخلية لإرسال الإشعار المنبثق عبر الـ API
+async function triggerWebPush(userId: string, title: string, message: string) {
+  try {
+    await fetch(
+      `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/api/web-push/send`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId,
+          title,
+          message,
+          url: "/notifications",
+        }),
+      },
+    );
+  } catch (err) {
+    console.error("⚠️ فشل إرسال الـ Web Push:", err);
+  }
+}
 export async function sendNotificationToUser({
   userId,
   type,
@@ -33,17 +52,17 @@ export async function sendNotificationToUser({
       await pusherServer.trigger(
         `user-${userId}`, // القناة المخصصة والمعزولة لهذا المستخدم فقط
         "new-notification",
-        notification
+        notification,
       );
     }
-
+    // إرسال إشعار منبثق (Web Push) للجهاز مباشرة
+    await triggerWebPush(userId, title, message);
     return notification;
   } catch (error) {
     console.error("❌ خطأ في إرسال الإشعار للمستخدم:", error);
     return null;
   }
 }
-
 
 export async function sendNotificationToAdmins({
   type,
@@ -73,12 +92,11 @@ export async function sendNotificationToAdmins({
         title,
         message,
         data,
-      })
+      }),
     );
 
     // تنفيذ الإرسال للجميع في نفس اللحظة
     await Promise.all(promises);
-    
   } catch (error) {
     console.error("❌ خطأ في إرسال الإشعارات للإدارة:", error);
   }

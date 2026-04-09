@@ -37,6 +37,7 @@ model User {
   merchant          Merchant?
   notifications     Notification[]
   reviews           Review[]
+  pushSubscriptions PushSubscription[]
 
   @@map("users")
 }
@@ -400,4 +401,18 @@ model HeroBanner {
   updatedAt     DateTime @updatedAt
 
   @@map("hero_banners")
+}
+// ==================== اشتراكات الإشعارات اللحظية ====================
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String?  // اختياري لربط الجهاز بمستخدم معين
+  endpoint  String   @unique // الرابط الفريد للجهاز
+  p256dh    String   // مفتاح التشفير الأول
+  auth      String   // مفتاح التشفير الثاني
+  createdAt DateTime @default(now())
+
+  // العلاقات
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("push_subscriptions")
 }

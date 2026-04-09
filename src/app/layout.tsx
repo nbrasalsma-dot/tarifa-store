@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { CartProvider } from "@/contexts/cart-context";
 import { WishlistProvider } from "@/contexts/wishlist-context";
 import { PusherListener } from "@/components/shared/pusher-listener";
+import { SWRegistration } from "@/components/shared/sw-registration";
 
 const tajawal = Tajawal({
   variable: "--font-tajawal",
@@ -19,17 +20,18 @@ const amiri = Amiri({
 });
 
 export const viewport: Viewport = {
-    themeColor: "#3D3021", // لون الشريط العلوي ليناسب فخامة ترفة
-    width: "device-width",
-    initialScale: 1,
-    maximumScale: 1,
-    userScalable: false, // يمنع التكبير بالأصابع ليعطي شعور التطبيق الحقيقي
-    viewportFit: "cover", // يجعل المحتوى يملأ الشاشة بالكامل حتى خلف النتوء (Notch)
+  themeColor: "#3D3021", // لون الشريط العلوي ليناسب فخامة ترفة
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false, // يمنع التكبير بالأصابع ليعطي شعور التطبيق الحقيقي
+  viewportFit: "cover", // يجعل المحتوى يملأ الشاشة بالكامل حتى خلف النتوء (Notch)
 };
 
 export const metadata: Metadata = {
   title: "تَرِفَة | متجر الأناقة والجمال",
-  description: "متجر تَرِفَة - وجهتك الأولى للأكسسوارات وأدوات التجميل والعطور الفاخرة في اليمن",
+  description:
+    "متجر تَرِفَة - وجهتك الأولى للأكسسوارات وأدوات التجميل والعطور الفاخرة في اليمن",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
@@ -57,6 +59,7 @@ export default function RootLayout({
       >
         <CartProvider>
           <WishlistProvider>
+            <SWRegistration />
             <PusherListener />
             {children}
           </WishlistProvider>
