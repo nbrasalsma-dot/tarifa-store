@@ -557,7 +557,7 @@ export function ChatWidget({
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 text-white hover:bg-white/20 rounded-full shrink-0"
+              className="h-8 w-8 text-white hover:bg-white/20 rounded-full shrink-0 z-50"
               onClick={() => {
                 setView("contacts");
                 setConversation(null);
@@ -686,7 +686,7 @@ export function ChatWidget({
                     </div>
                   </div>
 
-                  <ScrollArea className="flex-1 p-4">
+                  <ScrollArea className="h-full flex-1 p-4 overflow-y-auto">
                     {filteredContacts.length === 0 ? (
                       <div className="text-center py-12">
                         <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
@@ -746,7 +746,7 @@ export function ChatWidget({
             // Chat View
             <div className="flex-1 flex flex-col min-h-0 bg-gradient-to-b from-[#FAF7F2] to-white">
               {/* Messages Area */}
-              <ScrollArea className="flex-1 p-4">
+              <ScrollArea className="h-full flex-1 p-4 overflow-y-auto">
                 {messages.length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-full text-center">
                     <motion.div
