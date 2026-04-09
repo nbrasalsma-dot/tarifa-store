@@ -544,7 +544,7 @@ export function ChatWidget({
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: 50, scale: 0.9 }}
       transition={{ type: "spring", damping: 25, stiffness: 300 }}
-      className={`fixed bottom-6 left-6 z-[60] bg-white rounded-3xl shadow-2xl overflow-hidden transition-all duration-300 ${
+      className={`fixed bottom-6 left-6 z-[60] bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col transition-all duration-300 ${
         isMinimized
           ? "w-80 h-14"
           : "w-[calc(100vw-2rem)] sm:w-96 md:w-[28rem] h-[600px] max-h-[calc(100vh-3rem)]"
@@ -641,7 +641,7 @@ export function ChatWidget({
             </div>
           ) : view === "contacts" ? (
             // Contacts View
-            <div className="flex flex-col h-[520px] bg-gradient-to-b from-[#FAF7F2] to-white">
+            <div className="flex-1 flex flex-col min-h-0 bg-gradient-to-b from-[#FAF7F2] to-white">
               {/* Guest View */}
               {isGuest ? (
                 <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
@@ -744,7 +744,7 @@ export function ChatWidget({
             </div>
           ) : (
             // Chat View
-            <div className="flex flex-col h-[520px] bg-gradient-to-b from-[#FAF7F2] to-white">
+            <div className="flex-1 flex flex-col min-h-0 bg-gradient-to-b from-[#FAF7F2] to-white">
               {/* Messages Area */}
               <ScrollArea className="flex-1 p-4">
                 {messages.length === 0 ? (
