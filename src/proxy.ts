@@ -133,7 +133,7 @@ export default function proxy(req: NextRequest) {
   );
   response.headers.set(
     "Content-Security-Policy",
-    "default-src 'self'; connect-src 'self' https://*.pusher.com wss://*.pusher.com; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:",
+    "default-src 'self'; connect-src 'self' https://*.pusher.com wss://*.pusher.com https://*.imagekit.io; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; frame-src 'self' https://*.instagram.com;",
   );
 
   if (process.env.NODE_ENV === "production")

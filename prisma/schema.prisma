@@ -14,40 +14,42 @@ datasource db {
 // ==================== Users ====================
 
 model User {
-  id            String   @id @default(cuid())
-  email         String   @unique
-  name          String
-  password      String
-  phone         String
-  address       String?
-  role          UserRole @default(CUSTOMER)
-  isVerified    Boolean  @default(false)
-  isActive      Boolean  @default(true)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id          String   @id @default(cuid())
+  email       String   @unique
+  name        String
+  password    String
+  phone       String
+  address     String?
+  role        UserRole @default(CUSTOMER)
+  isVerified  Boolean  @default(false)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  permissions String? // JSON: صلاحيات خاصة للنظام المحاسبي
 
   // Relations
-  products         Product[]
-  orders           Order[]         @relation("CustomerOrders")
-  agentOrders      Order[]         @relation("AgentOrders")
-  conversations    Conversation[]  @relation("CustomerConversations")
-  agentConvs       Conversation[]  @relation("AgentConversations")
-  messages         Message[]
+  products          Product[]
+  orders            Order[]            @relation("CustomerOrders")
+  agentOrders       Order[]            @relation("AgentOrders")
+  conversations     Conversation[]     @relation("CustomerConversations")
+  agentConvs        Conversation[]     @relation("AgentConversations")
+  messages          Message[]
   verificationCodes VerificationCode[]
   merchant          Merchant?
   notifications     Notification[]
   reviews           Review[]
   pushSubscriptions PushSubscription[]
+  supplier          Supplier? // حساب المورد المرتبط (إذا كان تاجر/مندوب)
 
   @@map("users")
 }
 
 enum UserRole {
-  ADMIN      // الإدارة
-  AGENT      // المندوبة
-  MERCHANT   // التاجر جديد
-  CUSTOMER   // العميلة
-  GUEST      // زائر/ضيف (للمحادثات الفورية) 👈 أضف هذا السطر
+  ADMIN // الإدارة
+  AGENT // المندوبة
+  MERCHANT // التاجر جديد
+  CUSTOMER // العميلة
+  GUEST // زائر/ضيف (للمحادثات الفورية) 👈 أضف هذا السطر
 }
 
 // ==================== Merchants (التجار) ====================
@@ -55,91 +57,95 @@ enum UserRole {
 model Merchant {
   id                String   @id @default(cuid())
   userId            String   @unique
-  storeName         String   // اسم المحل
-  storeType         String   // نوع المنتجات
-  fullName          String   // الاسم الكامل
-  phone             String   // رقم الجوال
-  email             String   // البريد الإلكتروني
-  address           String   // عنوان المحل
-  identityCardImage String   // صورة البطاقة الشخصية
+  storeName         String // اسم المحل
+  storeType         String // نوع المنتجات
+  fullName          String // الاسم الكامل
+  phone             String // رقم الجوال
+  email             String // البريد الإلكتروني
+  address           String // عنوان المحل
+  identityCardImage String // صورة البطاقة الشخصية
   // بيانات الدفع
-  jeibWallet        String?  // محفظة جيب
-  kashWallet        String?  // محفظة كاش
-  jawaliWallet      String?  // محفظة جوالي
-  transferInfo      String?  // معلومات الحوالة
+  jeibWallet        String? // محفظة جيب
+  kashWallet        String? // محفظة كاش
+  jawaliWallet      String? // محفظة جوالي
+  transferInfo      String? // معلومات الحوالة
   // الحالة
-  isApproved        Boolean  @default(false)  // موافقة الإدارة
+  isApproved        Boolean  @default(false) // موافقة الإدارة
   isActive          Boolean  @default(true)
-  commissionAmount  Float    @default(0)      // مبلغ العمولة
-  totalSales        Float    @default(0)      // إجمالي المبيعات
-  totalCommission   Float    @default(0)      // إجمالي العمولات
+  commissionAmount  Float    @default(0) // مبلغ العمولة
+  totalSales        Float    @default(0) // إجمالي المبيعات
+  totalCommission   Float    @default(0) // إجمالي العمولات
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
-  
+
   // Relations
-  user              User     @relation(fields: [userId], references: [id])
-  products          Product[]
-  
+  user     User      @relation(fields: [userId], references: [id])
+  products Product[]
+
   @@map("merchants")
 }
 
 // ==================== Products ====================
 
 model Category {
-  id          String   @id @default(cuid())
-  name        String
-  nameAr      String
-  slug        String   @unique
-  image       String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(cuid())
+  name      String
+  nameAr    String
+  slug      String   @unique
+  image     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  products    Product[]
+  products Product[]
 
   @@map("categories")
 }
 
 model Product {
-  id          String   @id @default(cuid())
-  name        String
-  nameAr      String
-  description String?
+  id            String  @id @default(cuid())
+  name          String
+  nameAr        String
+  description   String?
   descriptionAr String?
-  price       Float
+  price         Float
   originalPrice Float?
-  images      String   // JSON array of image URLs
-  mainImage   String
-  stock       Int      @default(0)
-  sku         String?
-  isActive    Boolean  @default(true)
-  isFeatured  Boolean  @default(false)
+  images        String // JSON array of image URLs
+  mainImage     String
+  stock         Int     @default(0)
+  sku           String?
+  isActive      Boolean @default(true)
+  isFeatured    Boolean @default(false)
 
   // ==================== حقول الخطة الفخمة للتطوير ====================
-  colors          String?   // JSON: سيحفظ الاسم وكود اللون [{name: "أحمر", hex: "#FF0000"}]
-  sizes           String?   // JSON: سيحفظ المقاسات أو الأحجام ["S", "M", "L"] أو ["50ml", "100ml"]
-  videoUrl        String?   // رابط فيديو ريلز انستقرام أو يوتيوب (اختياري)
-  
+  colors   String? // JSON: سيحفظ الاسم وكود اللون [{name: "أحمر", hex: "#FF0000"}]
+  sizes    String? // JSON: سيحفظ المقاسات أو الأحجام ["S", "M", "L"] أو ["50ml", "100ml"]
+  videoUrl String? // رابط فيديو ريلز انستقرام أو يوتيوب (اختياري)
+
   // حقول الأكورديون (المحتوى الفخم)
-  featuresAr      String?   // المميزات
-  usageAr         String?   // طريقة الاستخدام
-  ingredientsAr   String?   // المكونات
-  
-  inStock         Boolean   @default(true)  // متوفر في المخزن؟
-  estimatedDays   Int?      // أيام التوصيل المتوقعة
-  merchantId      String?   // معرف التاجر (إن وجد)
+  featuresAr    String? // المميزات
+  usageAr       String? // طريقة الاستخدام
+  ingredientsAr String? // المكونات
+
+  inStock       Boolean @default(true) // متوفر في المخزن؟
+  estimatedDays Int? // أيام التوصيل المتوقعة
+  costPrice     Float? // سعر التكلفة (لأغراض المحاسبة والمخازن)
+  merchantId    String? // معرف التاجر (إن وجد)
+  supplierId    String? // معرف المورد الموحد (يربط بـ Supplier)
   // =================================================================
 
-  categoryId  String?
-  agentId     String?   // المندوبة التي أضافت المنتج (اختياري)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  categoryId String?
+  agentId    String? // المندوبة التي أضافت المنتج (اختياري)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   // Relations
-  category    Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  agent       User?      @relation(fields: [agentId], references: [id])
-  merchant    Merchant? @relation(fields: [merchantId], references: [id])
-  orderItems  OrderItem[]
-  reviews     Review[]
+  category              Category?              @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  agent                 User?                  @relation(fields: [agentId], references: [id])
+  merchant              Merchant?              @relation(fields: [merchantId], references: [id])
+  orderItems            OrderItem[]
+  reviews               Review[]
+  supplier              Supplier?              @relation("SupplierProducts", fields: [supplierId], references: [id])
+  inventoryTransactions InventoryTransaction[]
 
   @@map("products")
 }
@@ -147,68 +153,76 @@ model Product {
 // ==================== Governorates (المحافظات) ====================
 
 model Governorate {
-  id              String   @id @default(cuid())
-  name            String   @unique  // اسم المحافظة بالإنجليزي
-  nameAr          String            // اسم المحافظة بالعربية
-  deliveryFee     Float    @default(0)  // رسوم التوصيل
-  isActive        Boolean  @default(true)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
-  orders          Order[]
-  
+  id          String   @id @default(cuid())
+  name        String   @unique // اسم المحافظة بالإنجليزي
+  nameAr      String // اسم المحافظة بالعربية
+  deliveryFee Float    @default(0) // رسوم التوصيل
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  orders Order[]
+
   @@map("governorates")
 }
 
 // ==================== Orders ====================
 
 model Order {
-  id            String      @id @default(cuid())
-  customerId    String
-  agentId       String?
-  status        OrderStatus @default(PENDING)
-  totalAmount   Float
-  notes         String?
-  address       String?
-  phone         String?
-  governorate   String?     // المحافظة للتوصيل
-  paymentMethod String?     // transfer / wallet
-  paymentDetails String?    // JSON: transferNumber or wallet+proofImage
+  id             String      @id @default(cuid())
+  customerId     String
+  agentId        String?
+  status         OrderStatus @default(PENDING)
+  totalAmount    Float
+  notes          String?
+  address        String?
+  phone          String?
+  governorate    String? // المحافظة للتوصيل
+  paymentMethod  String? // transfer / wallet
+  paymentDetails String? // JSON: transferNumber or wallet+proofImage
 
   // ==================== حقول جديدة ====================
-  governorateId    String?   // ربط بالمحافظة
-  deliveryFee      Float     @default(0)  // رسوم التوصيل
-  locationUrl      String?   // رابط الموقع
-  paymentStatus    PaymentStatus @default(PENDING)
+  governorateId      String? // ربط بالمحافظة
+  deliveryFee        Float         @default(0) // رسوم التوصيل
+  locationUrl        String? // رابط الموقع
+  paymentStatus      PaymentStatus @default(PENDING)
   paymentConfirmedBy String? // من أكد الدفع
   paymentConfirmedAt DateTime?
+  source             OrderSource   @default(ONLINE) // مصدر الطلب: أونلاين أو بيع مباشر
+  posUserId          String? // المستخدم الذي أنشأ الطلب في نقطة البيع (إن وجد)
   // ====================================================
 
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  customer      User        @relation("CustomerOrders", fields: [customerId], references: [id])
-  agent         User?       @relation("AgentOrders", fields: [agentId], references: [id], onDelete: SetNull)
-  governorateRel Governorate? @relation(fields: [governorateId], references: [id])
-  items         OrderItem[]
+  customer       User          @relation("CustomerOrders", fields: [customerId], references: [id])
+  agent          User?         @relation("AgentOrders", fields: [agentId], references: [id], onDelete: SetNull)
+  governorateRel Governorate?  @relation(fields: [governorateId], references: [id])
+  items          OrderItem[]
+  transactions   Transaction[] // الحركات المالية المرتبطة بالطلب
 
   @@map("orders")
 }
 
+enum OrderSource {
+  ONLINE // طلب من المتجر الإلكتروني
+  POS // بيع مباشر من نقطة البيع
+}
+
 enum OrderStatus {
-  PENDING       // قيد الانتظار
-  PROCESSING    // قيد التجهيز
-  SHIPPED       // تم الشحن
-  DELIVERED     // تم التسليم
-  COMPLETED     // منجز
-  CANCELLED     // ملغي
+  PENDING // قيد الانتظار
+  PROCESSING // قيد التجهيز
+  SHIPPED // تم الشحن
+  DELIVERED // تم التسليم
+  COMPLETED // منجز
+  CANCELLED // ملغي
 }
 
 enum PaymentStatus {
-  PENDING    // قيد الانتظار
-  CONFIRMED  // مؤكد
-  REJECTED   // مرفوض
+  PENDING // قيد الانتظار
+  CONFIRMED // مؤكد
+  REJECTED // مرفوض
 }
 
 model OrderItem {
@@ -217,12 +231,12 @@ model OrderItem {
   productId String
   quantity  Int      @default(1)
   price     Float
-  color     String?  // اللون المختار
+  color     String? // اللون المختار
   createdAt DateTime @default(now())
 
   // Relations
-  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product   Product  @relation(fields: [productId], references: [id])
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
 
   @@map("order_items")
 }
@@ -230,18 +244,18 @@ model OrderItem {
 // ==================== Chat System ====================
 
 model Conversation {
-  id          String   @id @default(cuid())
-  customerId  String
-  agentId     String?
-  productId   String?  // محادثة حول منتج معين
-  status      ConversationStatus @default(ACTIVE)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id         String             @id @default(cuid())
+  customerId String
+  agentId    String?
+  productId  String? // محادثة حول منتج معين
+  status     ConversationStatus @default(ACTIVE)
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
 
   // Relations
-  customer    User      @relation("CustomerConversations", fields: [customerId], references: [id])
-  agent       User?     @relation("AgentConversations", fields: [agentId], references: [id])
-  messages    Message[]
+  customer User      @relation("CustomerConversations", fields: [customerId], references: [id])
+  agent    User?     @relation("AgentConversations", fields: [agentId], references: [id])
+  messages Message[]
 
   @@map("conversations")
 }
@@ -256,13 +270,13 @@ model Message {
   conversationId String
   senderId       String
   content        String
-  productImage   String?  // صورة منتج من المتجر
+  productImage   String? // صورة منتج من المتجر
   isRead         Boolean  @default(false)
   createdAt      DateTime @default(now())
 
   // Relations
-  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  sender         User        @relation(fields: [senderId], references: [id])
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User         @relation(fields: [senderId], references: [id])
 
   @@map("messages")
 }
@@ -270,84 +284,85 @@ model Message {
 // ==================== Verification ====================
 
 model VerificationCode {
-  id        String   @id @default(cuid())
+  id        String           @id @default(cuid())
   userId    String
   code      String
   type      VerificationType
   expiresAt DateTime
-  used      Boolean  @default(false)
-  createdAt DateTime @default(now())
+  used      Boolean          @default(false)
+  createdAt DateTime         @default(now())
 
   // Relations
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("verification_codes")
 }
 
 enum VerificationType {
-  EMAIL_VERIFICATION  // تأكيد البريد
-  PASSWORD_RESET      // إعادة تعيين كلمة المرور
+  EMAIL_VERIFICATION // تأكيد البريد
+  PASSWORD_RESET // إعادة تعيين كلمة المرور
 }
 
 // ==================== Notifications (الإشعارات) ====================
 
 model Notification {
-  id          String   @id @default(cuid())
-  userId      String            // المستلم
-  type        NotificationType
-  title       String
-  message     String
-  data        String?   // JSON بيانات إضافية
-  isRead      Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+  id        String           @id @default(cuid())
+  userId    String // المستلم
+  type      NotificationType
+  title     String
+  message   String
+  data      String? // JSON بيانات إضافية
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@map("notifications")
 }
 
 enum NotificationType {
   // --- إشعارات الطلبات والدفع (Orders & Payments) ---
-  ORDER_NEW            // طلب جديد (للأدمن/التاجر)
-  ORDER_CONFIRMED      // تم تأكيد الطلب (للزبون)
-  ORDER_CLAIMED      // مندوب استلم الطلب لتجهيزه 👈 أضف هذا السطر
-  ORDER_SHIPPED        // تم الشحن (للزبون)
-  ORDER_DELIVERED      // تم التسليم (للزبون)
-  ORDER_CANCELLED      // طلب ملغي
-  PAYMENT_SUBMITTED    // الزبون رفع إثبات الدفع (للأدمن)
-  PAYMENT_CONFIRMED    // تم تأكيد الدفع (للزبون)
-  PAYMENT_REJECTED     // تم رفض الدفع (للزبون)
+  ORDER_NEW // طلب جديد (للأدمن/التاجر)
+  ORDER_CONFIRMED // تم تأكيد الطلب (للزبون)
+  ORDER_CLAIMED // مندوب استلم الطلب لتجهيزه 👈 أضف هذا السطر
+  ORDER_SHIPPED // تم الشحن (للزبون)
+  ORDER_DELIVERED // تم التسليم (للزبون)
+  ORDER_CANCELLED // طلب ملغي
+  PAYMENT_SUBMITTED // الزبون رفع إثبات الدفع (للأدمن)
+  PAYMENT_CONFIRMED // تم تأكيد الدفع (للزبون)
+  PAYMENT_REJECTED // تم رفض الدفع (للزبون)
 
   // --- إشعارات المنتجات والتجار (Products & Merchants) ---
-  MERCHANT_REGISTERED  // تاجر جديد سجل (للأدمن)
-  MERCHANT_APPROVED    // تم تفعيل حساب التاجر (للتاجر)
-  PRODUCT_NEW          // تاجر أضاف منتجاً جديداً (للأدمن)
-  PRODUCT_APPROVED     // تم الموافقة على المنتج (للتاجر)
-  PRODUCT_REJECTED     // تم رفض المنتج (للتاجر)
+  MERCHANT_REGISTERED // تاجر جديد سجل (للأدمن)
+  MERCHANT_APPROVED // تم تفعيل حساب التاجر (للتاجر)
+  PRODUCT_NEW // تاجر أضاف منتجاً جديداً (للأدمن)
+  PRODUCT_APPROVED // تم الموافقة على المنتج (للتاجر)
+  PRODUCT_REJECTED // تم رفض المنتج (للتاجر)
 
   // --- إشعارات التفاعل (Interactions) ---
-  NEW_MESSAGE          // رسالة جديدة في المحادثة
-  NEW_COMMENT          // تعليق جديد
-  NEW_RATING           // تقييم جديد
+  NEW_MESSAGE // رسالة جديدة في المحادثة
+  NEW_COMMENT // تعليق جديد
+  NEW_RATING // تقييم جديد
 
   // --- إشعارات عامة (General) ---
-  SYSTEM               // إشعار نظام عام
+  SYSTEM // إشعار نظام عام
 }
+
 // ==================== Reviews (التقييمات والتعليقات) ====================
 
 model Review {
-  id          String   @id @default(cuid())
-  productId   String
-  userId      String
-  rating      Int      // 1-5 نجوم
-  comment     String?
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
-  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  user        User     @relation(fields: [userId], references: [id])
-  
+  id        String   @id @default(cuid())
+  productId String
+  userId    String
+  rating    Int // 1-5 نجوم
+  comment   String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id])
+
   @@map("reviews")
 }
 
@@ -359,16 +374,16 @@ model Advertisement {
   titleAr       String
   description   String?
   descriptionAr String?
-  price         Float?    // 👈 جديد: حقل السعر لإظهاره بشكل فخم
-  image         String    
-  link          String?   
-  ctaAr         String?   // 👈 جديد: نص الزر للإعلان
+  price         Float? // 👈 جديد: حقل السعر لإظهاره بشكل فخم
+  image         String
+  link          String?
+  ctaAr         String? // 👈 جديد: نص الزر للإعلان
   isActive      Boolean   @default(true)
   startDate     DateTime?
   endDate       DateTime?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
   @@map("advertisements")
 }
 
@@ -383,36 +398,117 @@ model Setting {
 
   @@map("settings")
 }
+
 // ==================== Hero Banners (بنرات الواجهة المتحركة) ====================
 
 model HeroBanner {
   id            String   @id @default(cuid())
-  title         String   // العنوان بالإنجليزية
-  titleAr       String   // العنوان بالعربية
-  subtitleAr    String?  // 👈 جديد: العنوان الفرعي (مثل: تَرِفَة)
-  description   String?  
-  descriptionAr String?  
-  image         String   
-  link          String?  
-  ctaAr         String?  // 👈 جديد: نص الزر (مثل: تسوق الآن)
-  order         Int      @default(0) 
-  isActive      Boolean  @default(true) 
+  title         String // العنوان بالإنجليزية
+  titleAr       String // العنوان بالعربية
+  subtitleAr    String? // 👈 جديد: العنوان الفرعي (مثل: تَرِفَة)
+  description   String?
+  descriptionAr String?
+  image         String
+  link          String?
+  ctaAr         String? // 👈 جديد: نص الزر (مثل: تسوق الآن)
+  order         Int      @default(0)
+  isActive      Boolean  @default(true)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
   @@map("hero_banners")
 }
+
 // ==================== اشتراكات الإشعارات اللحظية ====================
 model PushSubscription {
   id        String   @id @default(cuid())
-  userId    String?  // اختياري لربط الجهاز بمستخدم معين
+  userId    String? // اختياري لربط الجهاز بمستخدم معين
   endpoint  String   @unique // الرابط الفريد للجهاز
-  p256dh    String   // مفتاح التشفير الأول
-  auth      String   // مفتاح التشفير الثاني
+  p256dh    String // مفتاح التشفير الأول
+  auth      String // مفتاح التشفير الثاني
   createdAt DateTime @default(now())
 
   // العلاقات
-  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("push_subscriptions")
+}
+
+// ==================== الموردين (التجار والمناديب والإدارة) ====================
+model Supplier {
+  id          String       @id @default(cuid())
+  userId      String?       @unique // ربط مباشر بالمستخدم (تاجر، مندوب، إدارة)
+  name        String // اسم المورد (اسم المستخدم)
+  type        SupplierType @default(MERCHANT) // نوع المورد
+  commission  Float? // نسبة العمولة (تُستخدم إذا كان تاجر)
+  contactInfo String? // معلومات اتصال إضافية
+  notes       String? // ملاحظات
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  // العلاقات
+  user             User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  suppliedProducts Product[]     @relation("SupplierProducts") // المنتجات التي أضافها هذا المورد
+  transactions     Transaction[] @relation("SupplierTransactions")
+
+  @@map("suppliers")
+}
+
+enum SupplierType {
+  MERCHANT // تاجر
+  AGENT // مندوب
+  ADMIN // إدارة
+}
+
+// ==================== الحركات المالية (القيود اليومية) ====================
+model Transaction {
+  id              String          @id @default(cuid())
+  referenceNumber String? // رقم مرجعي اختياري (مثل رقم فاتورة)
+  type            TransactionType // نوع الحركة
+  amount          Float // المبلغ (موجب للإيرادات، سالب للمصروفات في المنطق)
+  description     String? // البيان أو الوصف
+  supplierId      String? // المورد المرتبط (إن وجد)
+  orderId         String? // الطلب المرتبط (إن وجد)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  // العلاقات
+  supplier Supplier? @relation("SupplierTransactions", fields: [supplierId], references: [id])
+  order    Order?    @relation(fields: [orderId], references: [id])
+
+  @@map("transactions")
+}
+
+enum TransactionType {
+  SALE // مبيعات
+  COLLECTION // تحصيل
+  PURCHASE // مشتريات
+  SUPPLY // توريد
+  RETURN // مرتجعات
+  OPERATING_EXPENSE // مصروفات تشغيلية
+}
+
+// ==================== حركات المخزون ====================
+model InventoryTransaction {
+  id        String                   @id @default(cuid())
+  productId String // المنتج المرتبط
+  quantity  Int // الكمية (موجب إضافة، سالب صرف)
+  type      InventoryTransactionType // نوع الحركة
+  reference String? // مرجع (مثل رقم طلب أو فاتورة)
+  notes     String? // ملاحظات
+  createdAt DateTime                 @default(now())
+  updatedAt DateTime                 @updatedAt
+
+  // العلاقات
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("inventory_transactions")
+}
+
+enum InventoryTransactionType {
+  PURCHASE // شراء (توريد للمخزن)
+  SALE // بيع (صرف من المخزن)
+  RETURN // مرتجع (إضافة للمخزن)
+  ADJUSTMENT // تعديل يدوي
+  TRANSFER // تحويل بين مخازن
 }

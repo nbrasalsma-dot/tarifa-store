@@ -6,6 +6,7 @@ import { CartProvider } from "@/contexts/cart-context";
 import { WishlistProvider } from "@/contexts/wishlist-context";
 import { PusherListener } from "@/components/shared/pusher-listener";
 import { SWRegistration } from "@/components/shared/sw-registration";
+import { AccountingProvider } from "@/contexts/accounting-context";
 
 const tajawal = Tajawal({
   variable: "--font-tajawal",
@@ -59,9 +60,11 @@ export default function RootLayout({
       >
         <CartProvider>
           <WishlistProvider>
-            <SWRegistration />
-            <PusherListener />
-            {children}
+            <AccountingProvider>
+              <SWRegistration />
+              <PusherListener />
+              {children}
+            </AccountingProvider>
           </WishlistProvider>
         </CartProvider>
         <Toaster />

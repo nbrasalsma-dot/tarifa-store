@@ -511,7 +511,7 @@ export function ChatWidget({
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 left-6 z-[60] group"
+        className="fixed bottom-20 left-6 z-[60] group"
       >
         <div className="relative">
           <div className="absolute inset-0 bg-gradient-to-r from-[#C9A962] to-[#B8956E] rounded-full blur-xl opacity-70 group-hover:opacity-100 transition-opacity" />
@@ -544,7 +544,7 @@ export function ChatWidget({
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: 50, scale: 0.9 }}
       transition={{ type: "spring", damping: 25, stiffness: 300 }}
-      className={`fixed bottom-6 left-6 z-[60] bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col transition-all duration-300 ${
+      className={`fixed bottom-20 left-6 z-[60] bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col transition-all duration-300 ${
         isMinimized
           ? "w-80 h-14"
           : "w-[calc(100vw-2rem)] sm:w-96 md:w-[28rem] h-[600px] max-h-[calc(100vh-3rem)]"

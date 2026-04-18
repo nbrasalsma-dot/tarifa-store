@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { 
-  verifyPassword, 
-  checkRateLimit, 
-  recordFailedAttempt, 
+import {
+  verifyPassword,
+  checkRateLimit,
+  recordFailedAttempt,
   clearRateLimit,
   logSecurityEvent,
   sanitizeInput,
@@ -25,17 +25,18 @@ const loginSchema = z.object({
  * - Security logging
  */
 export async function POST(request: NextRequest) {
-  const ip = request.headers.get("x-forwarded-for") || 
-             request.headers.get("x-real-ip") || 
-             "unknown";
+  const ip =
+    request.headers.get("x-forwarded-for") ||
+    request.headers.get("x-real-ip") ||
+    "unknown";
   const userAgent = request.headers.get("user-agent") || "unknown";
 
   try {
     const body = await request.json();
-    
+
     // Validate input
     const validatedData = loginSchema.parse(body);
-    
+
     // Sanitize email
     const sanitizedEmail = sanitizeInput(validatedData.email.toLowerCase());
 
@@ -54,11 +55,11 @@ export async function POST(request: NextRequest) {
       });
 
       return NextResponse.json(
-        { 
+        {
           error: ipRateLimit.message || "تم حظر الوصول مؤقتاً",
           lockedUntil: ipRateLimit.lockedUntil,
         },
-        { status: 429 }
+        { status: 429 },
       );
     }
 
@@ -73,11 +74,11 @@ export async function POST(request: NextRequest) {
       });
 
       return NextResponse.json(
-        { 
+        {
           error: emailRateLimit.message || "تم حظر الحساب مؤقتاً",
           lockedUntil: emailRateLimit.lockedUntil,
         },
-        { status: 429 }
+        { status: 429 },
       );
     }
 
@@ -92,7 +93,7 @@ export async function POST(request: NextRequest) {
     if (!user) {
       recordFailedAttempt(ip);
       recordFailedAttempt(sanitizedEmail);
-      
+
       logSecurityEvent({
         action: "LOGIN_FAILED_USER_NOT_FOUND",
         ip,
@@ -101,10 +102,7 @@ export async function POST(request: NextRequest) {
         status: "FAILURE",
       });
 
-      return NextResponse.json(
-        { error: genericError },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: genericError }, { status: 401 });
     }
 
     // Check if user is active
@@ -121,17 +119,20 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json(
         { error: "تم تعطيل حسابك. يرجى التواصل مع الإدارة" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
     // Verify password using bcrypt
-    const isValidPassword = await verifyPassword(validatedData.password, user.password);
+    const isValidPassword = await verifyPassword(
+      validatedData.password,
+      user.password,
+    );
 
     if (!isValidPassword) {
       recordFailedAttempt(ip);
       recordFailedAttempt(sanitizedEmail);
-      
+
       logSecurityEvent({
         action: "LOGIN_FAILED_WRONG_PASSWORD",
         userId: user.id,
@@ -141,21 +142,18 @@ export async function POST(request: NextRequest) {
         status: "FAILURE",
       });
 
-      return NextResponse.json(
-        { error: genericError },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: genericError }, { status: 401 });
     }
 
     // Check if email is verified
     if (!user.isVerified) {
       return NextResponse.json(
-        { 
+        {
           error: "يرجى التحقق من بريدك الإلكتروني أولاً",
           needsVerification: true,
-          userId: user.id 
+          userId: user.id,
         },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -188,17 +186,17 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("Login error:", error);
-    
+
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: error.errors[0].message },
-        { status: 400 }
+        { status: 400 },
       );
     }
-    
+
     return NextResponse.json(
       { error: "حدث خطأ أثناء تسجيل الدخول" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

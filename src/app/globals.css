@@ -41,7 +41,7 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
-  
+
   /* Tarifa Brand Colors */
   --color-gold: var(--gold);
   --color-gold-light: var(--gold-light);
@@ -52,103 +52,103 @@
 
 :root {
   --radius: 0.625rem;
-  
+
   /* Tarifa Luxury Theme */
-  --background: #FFFBF7;
-  --foreground: #1A1A1A;
-  --card: #FFFFFF;
-  --card-foreground: #1A1A1A;
-  --popover: #FFFFFF;
-  --popover-foreground: #1A1A1A;
-  
+  --background: #fffbf7;
+  --foreground: #1a1a1a;
+  --card: #ffffff;
+  --card-foreground: #1a1a1a;
+  --popover: #ffffff;
+  --popover-foreground: #1a1a1a;
+
   /* Gold/Champagne Primary */
-  --gold: #C9A962;
-  --gold-light: #E8D5A3;
-  --gold-dark: #9A7B3C;
-  --primary: #C9A962;
-  --primary-foreground: #FFFFFF;
-  
+  --gold: #c9a962;
+  --gold-light: #e8d5a3;
+  --gold-dark: #9a7b3c;
+  --primary: #c9a962;
+  --primary-foreground: #ffffff;
+
   /* Rose Accent */
-  --rose: #D4A5A5;
-  --rose-light: #F0D9D9;
-  --secondary: #F5EBE0;
-  --secondary-foreground: #1A1A1A;
-  
+  --rose: #d4a5a5;
+  --rose-light: #f0d9d9;
+  --secondary: #f5ebe0;
+  --secondary-foreground: #1a1a1a;
+
   /* Neutrals */
-  --muted: #F5F0EB;
-  --muted-foreground: #6B6B6B;
-  --accent: #F5EBE0;
-  --accent-foreground: #1A1A1A;
-  --destructive: #C75050;
-  --border: #E8E0D8;
-  --input: #E8E0D8;
-  --ring: #C9A962;
-  
+  --muted: #f5f0eb;
+  --muted-foreground: #6b6b6b;
+  --accent: #f5ebe0;
+  --accent-foreground: #1a1a1a;
+  --destructive: #c75050;
+  --border: #e8e0d8;
+  --input: #e8e0d8;
+  --ring: #c9a962;
+
   /* Charts */
-  --chart-1: #C9A962;
-  --chart-2: #D4A5A5;
-  --chart-3: #9A7B3C;
-  --chart-4: #E8D5A3;
-  --chart-5: #F0D9D9;
-  
+  --chart-1: #c9a962;
+  --chart-2: #d4a5a5;
+  --chart-3: #9a7b3c;
+  --chart-4: #e8d5a3;
+  --chart-5: #f0d9d9;
+
   /* Sidebar */
-  --sidebar: #FFFBF7;
-  --sidebar-foreground: #1A1A1A;
-  --sidebar-primary: #C9A962;
-  --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: #F5EBE0;
-  --sidebar-accent-foreground: #1A1A1A;
-  --sidebar-border: #E8E0D8;
-  --sidebar-ring: #C9A962;
+  --sidebar: #fffbf7;
+  --sidebar-foreground: #1a1a1a;
+  --sidebar-primary: #c9a962;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f5ebe0;
+  --sidebar-accent-foreground: #1a1a1a;
+  --sidebar-border: #e8e0d8;
+  --sidebar-ring: #c9a962;
 }
 
 .dark {
-  --background: #0F0F0F;
-  --foreground: #FAFAFA;
-  --card: #1A1A1A;
-  --card-foreground: #FAFAFA;
-  --popover: #1A1A1A;
-  --popover-foreground: #FAFAFA;
-  
+  --background: #0f0f0f;
+  --foreground: #fafafa;
+  --card: #1a1a1a;
+  --card-foreground: #fafafa;
+  --popover: #1a1a1a;
+  --popover-foreground: #fafafa;
+
   /* Gold/Champagne Primary - Darker for dark mode */
-  --gold: #D4B36A;
-  --gold-light: #E8D5A3;
-  --gold-dark: #C9A962;
-  --primary: #D4B36A;
-  --primary-foreground: #0F0F0F;
-  
+  --gold: #d4b36a;
+  --gold-light: #e8d5a3;
+  --gold-dark: #c9a962;
+  --primary: #d4b36a;
+  --primary-foreground: #0f0f0f;
+
   /* Rose Accent */
-  --rose: #D4A5A5;
-  --rose-light: #8A6A6A;
-  --secondary: #2A2520;
-  --secondary-foreground: #FAFAFA;
-  
+  --rose: #d4a5a5;
+  --rose-light: #8a6a6a;
+  --secondary: #2a2520;
+  --secondary-foreground: #fafafa;
+
   /* Neutrals */
   --muted: #252525;
-  --muted-foreground: #A0A0A0;
-  --accent: #2A2520;
-  --accent-foreground: #FAFAFA;
-  --destructive: #E05050;
+  --muted-foreground: #a0a0a0;
+  --accent: #2a2520;
+  --accent-foreground: #fafafa;
+  --destructive: #e05050;
   --border: #333333;
   --input: #333333;
-  --ring: #D4B36A;
-  
+  --ring: #d4b36a;
+
   /* Charts */
-  --chart-1: #D4B36A;
-  --chart-2: #D4A5A5;
-  --chart-3: #C9A962;
-  --chart-4: #E8D5A3;
-  --chart-5: #8A6A6A;
-  
+  --chart-1: #d4b36a;
+  --chart-2: #d4a5a5;
+  --chart-3: #c9a962;
+  --chart-4: #e8d5a3;
+  --chart-5: #8a6a6a;
+
   /* Sidebar */
-  --sidebar: #0F0F0F;
-  --sidebar-foreground: #FAFAFA;
-  --sidebar-primary: #D4B36A;
-  --sidebar-primary-foreground: #0F0F0F;
+  --sidebar: #0f0f0f;
+  --sidebar-foreground: #fafafa;
+  --sidebar-primary: #d4b36a;
+  --sidebar-primary-foreground: #0f0f0f;
   --sidebar-accent: #252525;
-  --sidebar-accent-foreground: #FAFAFA;
+  --sidebar-accent-foreground: #fafafa;
   --sidebar-border: #333333;
-  --sidebar-ring: #D4B36A;
+  --sidebar-ring: #d4b36a;
 }
 
 @layer base {
@@ -159,7 +159,7 @@
     @apply bg-background text-foreground;
     font-family: var(--font-tajawal), sans-serif;
   }
-  
+
   /* RTL Support */
   html[dir="rtl"] {
     direction: rtl;
@@ -169,9 +169,14 @@
 @layer utilities {
   /* Luxury Gold Gradient */
   .gradient-gold {
-    background: linear-gradient(135deg, var(--gold-light) 0%, var(--gold) 50%, var(--gold-dark) 100%);
+    background: linear-gradient(
+      135deg,
+      var(--gold-light) 0%,
+      var(--gold) 50%,
+      var(--gold-dark) 100%
+    );
   }
-  
+
   /* Shimmer Animation for Luxury Effect */
   .shimmer {
     background: linear-gradient(
@@ -183,7 +188,7 @@
     background-size: 200% 100%;
     animation: shimmer 2s infinite;
   }
-  
+
   @keyframes shimmer {
     0% {
       background-position: -200% 0;
@@ -192,67 +197,69 @@
       background-position: 200% 0;
     }
   }
-  
+
   /* Float Animation */
   .float {
     animation: float 3s ease-in-out infinite;
   }
-  
+
   @keyframes float {
-    0%, 100% {
+    0%,
+    100% {
       transform: translateY(0);
     }
     50% {
       transform: translateY(-10px);
     }
   }
-  
+
   /* Pulse Gold */
   .pulse-gold {
     animation: pulseGold 2s ease-in-out infinite;
   }
-  
+
   @keyframes pulseGold {
-    0%, 100% {
+    0%,
+    100% {
       box-shadow: 0 0 0 0 rgba(201, 169, 98, 0.4);
     }
     50% {
       box-shadow: 0 0 0 15px rgba(201, 169, 98, 0);
     }
   }
-  
+
   /* 3D Card Effect */
   .card-3d {
     transform-style: preserve-3d;
     perspective: 1000px;
   }
-  
+
   .card-3d:hover {
     transform: rotateY(-5deg) rotateX(5deg);
   }
-  
+
   /* Glass Effect */
   .glass {
     background: rgba(255, 255, 255, 0.7);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
   }
-  
+
   /* Custom Scrollbar */
   .custom-scrollbar::-webkit-scrollbar {
     width: 6px;
   }
-  
+
   .custom-scrollbar::-webkit-scrollbar-track {
     background: var(--muted);
     border-radius: 3px;
   }
-  
+
   .custom-scrollbar::-webkit-scrollbar-thumb {
     background: var(--gold);
     border-radius: 3px;
   }
-  
+
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     background: var(--gold-dark);
   }
@@ -271,70 +278,103 @@
 }
 /* Custom scrollbar for chat */
 .custom-scrollbar::-webkit-scrollbar {
-    width: 4px;
+  width: 4px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
-    background: #F5EFE6;
-    border-radius: 10px;
+  background: #f5efe6;
+  border-radius: 10px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: #C9A962;
-    border-radius: 10px;
+  background: #c9a962;
+  border-radius: 10px;
 }
 
 /* Chat animations */
 @keyframes pulse-gold {
-    0%, 100% {
-        box-shadow: 0 0 0 0 rgba(201, 169, 98, 0.4);
-    }
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(201, 169, 98, 0.4);
+  }
 
-    50% {
-        box-shadow: 0 0 0 8px rgba(201, 169, 98, 0);
-    }
+  50% {
+    box-shadow: 0 0 0 8px rgba(201, 169, 98, 0);
+  }
 }
 
 .animate-pulse-gold {
-    animation: pulse-gold 1.5s infinite;
+  animation: pulse-gold 1.5s infinite;
 }
 
 /* Message bubble animations */
 .message-enter {
-    opacity: 0;
-    transform: translateY(10px);
+  opacity: 0;
+  transform: translateY(10px);
 }
 
 .message-enter-active {
-    opacity: 1;
-    transform: translateY(0);
-    transition: opacity 200ms, transform 200ms;
+  opacity: 1;
+  transform: translateY(0);
+  transition:
+    opacity 200ms,
+    transform 200ms;
 }
 
 /* Typing indicator dots */
 .typing-dot {
-    width: 6px;
-    height: 6px;
-    background-color: #C9A962;
-    border-radius: 50%;
-    display: inline-block;
-    animation: typing-bounce 1.4s infinite ease-in-out both;
+  width: 6px;
+  height: 6px;
+  background-color: #c9a962;
+  border-radius: 50%;
+  display: inline-block;
+  animation: typing-bounce 1.4s infinite ease-in-out both;
 }
 
-    .typing-dot:nth-child(1) {
-        animation-delay: -0.32s;
-    }
+.typing-dot:nth-child(1) {
+  animation-delay: -0.32s;
+}
 
-    .typing-dot:nth-child(2) {
-        animation-delay: -0.16s;
-    }
+.typing-dot:nth-child(2) {
+  animation-delay: -0.16s;
+}
 
 @keyframes typing-bounce {
-    0%, 80%, 100% {
-        transform: scale(0);
-    }
+  0%,
+  80%,
+  100% {
+    transform: scale(0);
+  }
 
-    40% {
-        transform: scale(1);
-    }
+  40% {
+    transform: scale(1);
+  }
+}
+/* RTL Support - يقوم بعكس الاتجاهات تلقائياً */
+[dir="rtl"] {
+  direction: rtl;
+  text-align: right;
+}
+
+[dir="rtl"] .ltr-only {
+  display: none !important;
+}
+
+/* عكس الهوامش والحشوات */
+[dir="rtl"] .ml-auto {
+  margin-right: auto !important;
+  margin-left: 0 !important;
+}
+[dir="rtl"] .mr-auto {
+  margin-left: auto !important;
+  margin-right: 0 !important;
+}
+
+/* عكس الأيقونات التي تحتاج دوران */
+[dir="rtl"] .icon-flip {
+  transform: scaleX(-1);
+}
+html[dir="rtl"] body {
+  direction: rtl;
+  text-align: right;
 }

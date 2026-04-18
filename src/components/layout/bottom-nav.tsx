@@ -17,7 +17,7 @@ export function BottomNav({ onOpenCart, onOpenAuth, user }: any) {
   const navItems = [
     { icon: Home, label: "الرئيسية", href: "/" },
     { icon: Grid, label: "الأقسام", href: "/categories" },
-    { icon: ShoppingCart, label: "السلة", onClick: onOpenCart, isCart: true },
+    { icon: ShoppingCart, label: "السلة", href: "/cart", isCart: true },
     { icon: Heart, label: "المفضلة", href: "/wishlist" },
     { icon: User, label: "حسابي", href: "/?view=dashboard", isUser: true },
   ];

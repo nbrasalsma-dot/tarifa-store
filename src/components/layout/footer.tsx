@@ -1,7 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { Phone, Mail, MapPin, Instagram, MessageCircle, Heart, Sparkles, Twitter, Facebook } from "lucide-react";
+import {
+  Phone,
+  Mail,
+  MapPin,
+  Instagram,
+  MessageCircle,
+  Heart,
+  Sparkles,
+  Twitter,
+  Facebook,
+} from "lucide-react";
 
 // WhatsApp number
 const WHATSAPP_NUMBER = "967776080395";
@@ -18,13 +28,14 @@ export function Footer() {
           <div className="lg:col-span-1">
             <div className="mb-6">
               <img
-                src="/logo-transparent.jpg"
+                src="/logo.png"
                 alt="تَرِفَة"
-                className="h-20 w-auto object-contain brightness-0 invert"
+                className="h-20 w-auto object-contain"
               />
             </div>
             <p className="text-white/60 leading-relaxed mb-6">
-              وجهتك الأولى للأكسسوارات وأدوات التجميل والعطور الفاخرة في اليمن. نقدم لكي تجربة تسوق فريدة ومميزة.
+              وجهتك الأولى للأكسسوارات وأدوات التجميل والعطور الفاخرة في اليمن.
+              نقدم لكي تجربة تسوق فريدة ومميزة.
             </p>
             <div className="flex gap-3">
               <a
@@ -68,7 +79,9 @@ export function Footer() {
 
           {/* Quick Links */}
           <div>
-            <h3 className="text-lg font-bold mb-6 text-[#C9A962]">روابط سريعة</h3>
+            <h3 className="text-lg font-bold mb-6 text-[#C9A962]">
+              روابط سريعة
+            </h3>
             <ul className="space-y-4">
               {[
                 { href: "/", label: "الرئيسية" },
@@ -92,11 +105,19 @@ export function Footer() {
 
           {/* Customer Service */}
           <div>
-            <h3 className="text-lg font-bold mb-6 text-[#C9A962]">خدمة العملاء</h3>
+            <h3 className="text-lg font-bold mb-6 text-[#C9A962]">
+              خدمة العملاء
+            </h3>
             <ul className="space-y-4">
               {[
-                { href: "/policies?tab=shipping", label: "سياسة الشحن والتوصيل" },
-                { href: "/policies?tab=returns", label: "سياسة الإرجاع والاستبدال" },
+                {
+                  href: "/policies?tab=shipping",
+                  label: "سياسة الشحن والتوصيل",
+                },
+                {
+                  href: "/policies?tab=returns",
+                  label: "سياسة الإرجاع والاستبدال",
+                },
                 { href: "/policies?tab=faq", label: "الأسئلة الشائعة" },
                 { href: "/policies?tab=terms", label: "الشروط والأحكام" },
                 { href: "/policies?tab=privacy", label: "سياسة الخصوصية" },
@@ -116,7 +137,9 @@ export function Footer() {
 
           {/* Contact Info */}
           <div>
-            <h3 className="text-lg font-bold mb-6 text-[#C9A962]">تواصل معنا</h3>
+            <h3 className="text-lg font-bold mb-6 text-[#C9A962]">
+              تواصل معنا
+            </h3>
             <ul className="space-y-5">
               <li className="flex items-center gap-4">
                 <div className="w-11 h-11 rounded-full bg-[#C9A962]/20 flex items-center justify-center shrink-0">
@@ -129,6 +152,7 @@ export function Footer() {
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-white hover:text-[#C9A962] transition-colors"
+                    dir="ltr"
                   >
                     +967 776 080 395
                   </a>
@@ -143,6 +167,7 @@ export function Footer() {
                   <a
                     href="mailto:tarifa.store.ye@gmail.com"
                     className="text-white hover:text-[#C9A962] transition-colors"
+                    dir="ltr"
                   >
                     tarifa.store.ye@gmail.com
                   </a>

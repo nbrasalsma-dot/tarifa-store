@@ -15,8 +15,10 @@ import {
   Store,
   LayoutDashboard,
   Sparkles,
+  Bell,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useCart } from "@/contexts/cart-context";
 import { useWishlist } from "@/contexts/wishlist-context";
@@ -38,7 +40,7 @@ interface NavbarProps {
   onLogout?: () => void;
   onViewStore?: () => void;
   onViewDashboard?: () => void;
-  viewMode?: 'dashboard' | 'store';
+  viewMode?: "dashboard" | "store";
 }
 
 export function Navbar({
@@ -49,7 +51,7 @@ export function Navbar({
   onLogout,
   onViewStore,
   onViewDashboard,
-  viewMode = 'store'
+  viewMode = "store",
 }: NavbarProps) {
   const pathname = usePathname();
   const [isScrolled, setIsScrolled] = useState(false);
@@ -58,7 +60,6 @@ export function Navbar({
   const { state } = useCart();
   const { state: wishlistState } = useWishlist();
 
-  // Get cart data safely
   const cartItemCount = state?.cart?.itemCount || 0;
   const wishlistItemCount = wishlistState?.itemCount || 0;
 
@@ -83,12 +84,10 @@ export function Navbar({
     return pathname.startsWith(href);
   };
 
-  // Handle wishlist click
   const handleWishlistClick = () => {
     if (onOpenWishlist) {
       onOpenWishlist();
     } else {
-      // Fallback: navigate to wishlist page
       window.location.href = "/wishlist";
     }
   };
@@ -105,7 +104,9 @@ export function Navbar({
       <div className="bg-gradient-to-r from-[#3D3021] via-[#4A3D2E] to-[#3D3021] text-white py-2 text-center text-sm">
         <div className="container mx-auto px-4 flex items-center justify-center gap-2">
           <Sparkles className="h-3 w-3 text-[#C9A962]" />
-          <span className="text-white/90 font-medium tracking-wide">✨ تَرِفَة .. وجهتكِ الأولى للأناقة والجمال ✨</span>
+          <span className="text-white/90 font-medium tracking-wide">
+            ✨ تَرِفَة .. وجهتكِ الأولى للأناقة والجمال ✨
+          </span>
           <Sparkles className="h-3 w-3 text-[#C9A962]" />
         </div>
       </div>
@@ -115,18 +116,22 @@ export function Navbar({
           {/* Mobile Menu Button */}
           <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
             <SheetTrigger asChild>
-              {/* أضفنا hidden قبل md:hidden لكي يختفي تماماً في الجوال */}
-              <Button variant="ghost" size="icon" className="hidden md:hidden hover:bg-[#FAF7F2] shrink-0">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="md:hidden hover:bg-[#FAF7F2] shrink-0"
+              >
                 <Menu className="h-6 w-6 text-[#3D3021]" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-80 bg-white border-l-0">
+            <SheetContent side="right" className="w-80 bg-white border-l-0 p-0">
               <div className="flex flex-col h-full">
-                <div className="flex items-center justify-between mb-8 pb-6 border-b border-[#FAF7F2]">
+                {/* رأس القائمة */}
+                <div className="flex items-center justify-between p-4 pb-2 border-b border-[#FAF7F2]">
                   <img
                     src="/logo-transparent.jpg"
                     alt="تَرِفَة"
-                    className="h-12 w-auto object-contain"
+                    className="h-10 w-auto object-contain"
                   />
                   <Button
                     variant="ghost"
@@ -138,13 +143,14 @@ export function Navbar({
                   </Button>
                 </div>
 
-                <nav className="flex flex-col gap-1">
+                {/* روابط التنقل */}
+                <nav className="flex flex-col gap-1 p-4">
                   {navLinks.map((link) => (
                     <Link
                       key={link.href}
                       href={link.href}
                       onClick={() => setIsMobileMenuOpen(false)}
-                      className={`text-lg font-semibold py-4 px-5 rounded-xl transition-all duration-300 ${
+                      className={`text-base font-semibold py-3 px-4 rounded-xl transition-all duration-300 ${
                         isActive(link.href)
                           ? "bg-gradient-to-r from-[#C9A962]/10 to-[#C9A962]/5 text-[#8B7355] border-r-4 border-[#C9A962]"
                           : "text-[#3D3021] hover:bg-[#FAF7F2] hover:text-[#8B7355]"
@@ -153,45 +159,27 @@ export function Navbar({
                       {link.label}
                     </Link>
                   ))}
-                  
-                  {/* Wishlist Link in Mobile Menu */}
-                  <button
-                    onClick={() => {
-                      setIsMobileMenuOpen(false);
-                      handleWishlistClick();
-                    }}
-                    className="text-lg font-semibold py-4 px-5 rounded-xl transition-all duration-300 text-[#3D3021] hover:bg-[#FAF7F2] hover:text-[#8B7355] flex items-center justify-between"
-                  >
-                    <span>المفضلة</span>
-                    {wishlistItemCount > 0 && (
-                      <span className="bg-gradient-to-r from-rose-500 to-pink-500 text-white text-sm px-2 py-0.5 rounded-full">
-                        {wishlistItemCount}
-                      </span>
-                    )}
-                  </button>
                 </nav>
 
-                {/* Mobile Quick Actions */}
-                <div className="flex gap-3 mt-6 px-2">
-                  <Button
-                    variant="outline"
-                    className="flex-1 gap-2 py-6 rounded-xl border-[#C9A962] text-[#8B7355] hover:bg-[#FAF7F2]"
-                    onClick={() => {
-                      setIsMobileMenuOpen(false);
-                      onOpenCart();
-                    }}
-                  >
-                    <ShoppingCart className="h-5 w-5" />
-                    <span>السلة</span>
-                    {cartItemCount > 0 && (
-                      <span className="bg-[#C9A962] text-white text-xs px-2 py-0.5 rounded-full">
-                        {cartItemCount}
+                <div className="flex-1" />
+
+                {/* إجراءات سريعة (أيقونات الجوال) */}
+                <div className="p-4 space-y-3 border-t border-[#FAF7F2]">
+                  {/* الإشعارات */}
+                  {user && (
+                    <div className="flex items-center justify-between py-2">
+                      <span className="font-medium text-[#3D3021] flex items-center gap-2">
+                        <Bell className="h-5 w-5 text-[#C9A962]" />
+                        الإشعارات
                       </span>
-                    )}
-                  </Button>
+                      <NotificationBell userId={user.id} />
+                    </div>
+                  )}
+
+                  {/* المفضلة */}
                   <Button
-                    variant="outline"
-                    className="flex-1 gap-2 py-6 rounded-xl border-rose-300 text-rose-600 hover:bg-rose-50"
+                    variant="ghost"
+                    className="w-full justify-start gap-3 text-[#3D3021] hover:bg-[#FAF7F2] py-5"
                     onClick={() => {
                       setIsMobileMenuOpen(false);
                       handleWishlistClick();
@@ -199,26 +187,55 @@ export function Navbar({
                   >
                     <Heart className="h-5 w-5" />
                     <span>المفضلة</span>
+                    {wishlistItemCount > 0 && (
+                      <Badge className="ml-auto bg-rose-500 text-white">
+                        {wishlistItemCount}
+                      </Badge>
+                    )}
                   </Button>
+
+                  {/* السلة */}
+                  <Link
+                    href="/cart"
+                    className="w-full"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start gap-3 text-[#3D3021] hover:bg-[#FAF7F2] py-5"
+                    >
+                      <ShoppingCart className="h-5 w-5" />
+                      <span>السلة</span>
+                      {cartItemCount > 0 && (
+                        <Badge className="ml-auto bg-[#C9A962] text-white">
+                          {cartItemCount}
+                        </Badge>
+                      )}
+                    </Button>
+                  </Link>
                 </div>
 
-                {/* Mobile User Section */}
-                <div className="mt-auto pt-6 border-t border-[#FAF7F2]">
+                {/* قسم المستخدم */}
+                <div className="p-4 border-t border-[#FAF7F2]">
                   {user ? (
                     <div className="space-y-3">
-                      <div className="flex items-center gap-4 p-4 bg-gradient-to-r from-[#FAF7F2] to-white rounded-xl">
-                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#C9A962] to-[#B8956E] flex items-center justify-center shrink-0">
-                          <User className="h-6 w-6 text-white" />
+                      <div className="flex items-center gap-3 p-3 bg-[#FAF7F2] rounded-xl">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#C9A962] to-[#B8956E] flex items-center justify-center shrink-0">
+                          <User className="h-5 w-5 text-white" />
                         </div>
                         <div className="overflow-hidden">
-                          <p className="font-bold text-[#3D3021] truncate">{user.name}</p>
-                          <p className="text-sm text-[#8B7355] truncate">{user.email}</p>
+                          <p className="font-bold text-[#3D3021] truncate">
+                            {user.name}
+                          </p>
+                          <p className="text-xs text-[#8B7355] truncate">
+                            {user.email}
+                          </p>
                         </div>
                       </div>
-                      {onViewStore && viewMode === 'dashboard' && (
+                      {onViewStore && viewMode === "dashboard" && (
                         <Button
                           variant="outline"
-                          className="w-full justify-start gap-3 py-6 rounded-xl border-[#C9A962] text-[#8B7355] hover:bg-[#FAF7F2]"
+                          className="w-full justify-start gap-3 py-5 rounded-xl border-[#C9A962] text-[#8B7355] hover:bg-[#FAF7F2]"
                           onClick={() => {
                             onViewStore();
                             setIsMobileMenuOpen(false);
@@ -228,10 +245,10 @@ export function Navbar({
                           عرض المتجر
                         </Button>
                       )}
-                      {onViewDashboard && viewMode === 'store' && (
+                      {onViewDashboard && viewMode === "store" && (
                         <Button
                           variant="outline"
-                          className="w-full justify-start gap-3 py-6 rounded-xl border-[#C9A962] text-[#8B7355] hover:bg-[#FAF7F2]"
+                          className="w-full justify-start gap-3 py-5 rounded-xl border-[#C9A962] text-[#8B7355] hover:bg-[#FAF7F2]"
                           onClick={() => {
                             onViewDashboard();
                             setIsMobileMenuOpen(false);
@@ -244,7 +261,7 @@ export function Navbar({
                       {onLogout && (
                         <Button
                           variant="ghost"
-                          className="w-full justify-start gap-3 text-rose-600 hover:text-rose-700 hover:bg-rose-50 py-6 rounded-xl"
+                          className="w-full justify-start gap-3 text-rose-600 hover:text-rose-700 hover:bg-rose-50 py-5 rounded-xl"
                           onClick={() => {
                             onLogout();
                             setIsMobileMenuOpen(false);
@@ -257,7 +274,7 @@ export function Navbar({
                     </div>
                   ) : (
                     <Button
-                      className="w-full bg-gradient-to-r from-[#C9A962] to-[#B8956E] hover:from-[#B8956E] hover:to-[#9A7B4F] text-white py-7 rounded-xl text-lg"
+                      className="w-full bg-gradient-to-r from-[#C9A962] to-[#B8956E] hover:from-[#B8956E] hover:to-[#9A7B4F] text-white py-6 rounded-xl text-base"
                       onClick={() => {
                         setIsMobileMenuOpen(false);
                         onOpenAuth();
@@ -304,14 +321,13 @@ export function Navbar({
             ))}
           </nav>
 
-          {/* Actions */}
-          <div className="flex items-center gap-1 sm:gap-2 md:gap-3">
+          {/* Actions - Desktop Only (مخفية على الجوال) */}
+          <div className="hidden md:flex items-center gap-1 md:gap-2">
             {user && <NotificationBell userId={user.id} />}
-            {/* Wishlist - Always visible */}
             <Button
               variant="ghost"
               size="icon"
-              className="relative hover:bg-[#FAF7F2] rounded-full shrink-0 h-10 w-10 hidden md:flex"
+              className="relative hover:bg-[#FAF7F2] rounded-full shrink-0 h-10 w-10"
               onClick={handleWishlistClick}
             >
               <Heart className="h-5 w-5 text-[#3D3021]" />
@@ -325,31 +341,30 @@ export function Navbar({
                 </motion.span>
               )}
             </Button>
-
-            {/* Cart - Always visible */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="relative hover:bg-[#FAF7F2] rounded-full shrink-0 h-10 w-10 hidden md:flex"
-              onClick={onOpenCart}
-            >
-              <ShoppingCart className="h-5 w-5 text-[#3D3021]" />
-              {cartItemCount > 0 && (
-                <motion.span
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center bg-gradient-to-r from-[#C9A962] to-[#B8956E] text-white text-xs rounded-full"
-                >
-                  {cartItemCount}
-                </motion.span>
-              )}
-            </Button>
+            <Link href="/cart" className="relative">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="relative hover:bg-[#FAF7F2] rounded-full shrink-0 h-10 w-10"
+              >
+                <ShoppingCart className="h-5 w-5 text-[#3D3021]" />
+                {cartItemCount > 0 && (
+                  <motion.span
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center bg-gradient-to-r from-[#C9A962] to-[#B8956E] text-white text-xs rounded-full"
+                  >
+                    {cartItemCount}
+                  </motion.span>
+                )}
+              </Button>
+            </Link>
 
             {/* User Menu - Desktop */}
-            <div className="hidden md:flex items-center gap-2">
+            <div className="flex items-center gap-2">
               {user ? (
                 <div className="flex items-center gap-2">
-                  {onViewStore && viewMode === 'dashboard' && (
+                  {onViewStore && viewMode === "dashboard" && (
                     <Button
                       variant="ghost"
                       size="sm"
@@ -360,7 +375,7 @@ export function Navbar({
                       <span className="hidden xl:inline">المتجر</span>
                     </Button>
                   )}
-                  {onViewDashboard && viewMode === 'store' && (
+                  {onViewDashboard && viewMode === "store" && (
                     <Button
                       variant="ghost"
                       size="sm"
@@ -392,18 +407,11 @@ export function Navbar({
                 </Button>
               )}
             </div>
+          </div>
 
-            {/* Mobile Login Button - only show if not logged in */}
-            {!user && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="hidden md:hidden hover:bg-[#FAF7F2] shrink-0 h-10 w-10"
-                onClick={onOpenAuth}
-              >
-                <User className="h-5 w-5 text-[#3D3021]" />
-              </Button>
-            )}
+          {/* زر القائمة للجوال (يظهر فقط الأيقونة الأساسية) */}
+          <div className="md:hidden">
+            {/* نترك المساحة فارغة أو نضع شيئًا بسيطًا مثل شعار صغير */}
           </div>
         </div>
       </div>

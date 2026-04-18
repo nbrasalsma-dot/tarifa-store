@@ -446,23 +446,6 @@ function HomeContent() {
         defaultTab={authTab}
       />
 
-      {/* Cart Panel */}
-      <CartPanel
-        isOpen={isCartOpen}
-        onClose={() => setIsCartOpen(false)}
-        user={user}
-        onCheckout={() => {
-          if (!user) {
-            setIsCartOpen(false);
-            setIsAuthOpen(true);
-            setAuthTab("login");
-          } else {
-            setIsCartOpen(false);
-            setIsCheckoutOpen(true);
-          }
-        }}
-      />
-
       {/* Checkout Dialog */}
       <CheckoutDialog
         isOpen={isCheckoutOpen}
